@@ -111,7 +111,7 @@ namespace OpenFL
         
         FCM::AutoPtr<FlashApplication::Service::IOutputConsoleService> outputConsoleService = pUnk;
         FCM::StringRep16 path = Utils::ToString16(featureXMLPath,pCallback);
-        FCM::StringRep16 outputString = Utils::ToString16(std::string("\nThe feature settings for the OpenFLExtension document type is read from "),GetCallback());
+        FCM::StringRep16 outputString = Utils::ToString16(std::string("\n.....The feature settings for the OpenFLExtension document type is read from "),GetCallback());
         outputConsoleService->Trace(outputString);
         outputConsoleService->Trace(path);
 
