@@ -1,0 +1,6 @@
+[submodule "project/lib/json"]
+	path = project/lib/json
+	url = https://github.com/native-toolkit/json
+[submodule "project/lib/xerces-c"]
+	path = project/lib/xerces-c
+	url = https://github.com/native-toolkit/xerces-c

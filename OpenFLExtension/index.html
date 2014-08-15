@@ -1,0 +1,488 @@
+<!doctype html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <script src="./lib/CSInterface-4.0.0.js"></script>
+    <title>PublishSettings</title>
+    <style>
+        body {
+            margin:0px;
+            background:#444444;
+            height:100%;
+            color:#c6c6c6;
+            font-size:12px;
+        }
+        #container{
+            margin:10px;
+        }
+      .myLabel{
+           width:70px;
+            text-align:right;
+            display:block;
+            float:left;
+			padding-top:4px;
+			padding-right:11px;
+      }
+        input[type="text"]{
+            background:#c6c6c6;
+            border:1px solid #070707;
+            float:left;
+            display:block;
+            width:350px;
+            color:#444444;
+        }
+        
+        input[type="text"]:selected{
+            border:1px solid #D49B00;
+        }
+        
+        #publish{
+       margin-left:auto;
+        margin-right:250px;
+        bottom:25px;
+        height:25px;
+        width:100px;
+        position:absolute;
+        border:1px solid #070707;
+        background:#444444;
+        padding:4px;
+        color:#c6c6c6;
+        }
+        
+    #publish:hover{
+       background:#515151;
+    }
+    
+    input[type="image"] {
+    height:16px;
+    width:16px;
+    border:1px solid #070707;
+    margin-left:5px;
+    margin-top:3px;
+}
+
+.myList{
+background:#c6c6c6;
+border:1px solid #070707;
+display:inline;
+width:350px;
+color:#444444;
+}
+
+.myLabel2{
+           width:70px;
+           text-align:left;
+           display:block;
+           float:left;
+		   padding-left: 5px;
+		   padding-top: 4px;
+}
+
+.myLabel3{
+           width:80px;
+           text-align:right;
+           display:block;
+           float:left;
+		   padding-top:4px;
+		   padding-right:2px;
+}
+.myLabel4{
+           width:150px;
+           text-align:left;
+           display:block;
+           float:left;
+		   padding-top:4px;
+		   padding-right:10px;
+}
+
+#timeId{
+            background:#c6c6c6;
+            border:1px solid #070707;
+            float:left;
+            display:block;
+            width:50px;
+            color:#444444;
+        }
+
+#jpegId{
+            background:#c6c6c6;
+            border:1px solid #070707;
+            float:left;
+            display:block;
+            width:50px;
+            color:#444444;
+        }
+
+#myList3{
+            background:#c6c6c6;
+            border:1px solid #070707;
+            width:75px;
+            color:#444444;
+        }
+
+.myListClass{
+            background:#c6c6c6;
+            border:1px solid #070707;
+            display:block;
+            width:175px;
+            color:#444444;
+			float:left;
+        }
+
+    </style>
+</head>
+
+<script>
+
+var csInterface;
+var im_folder;
+
+function isNumber(event) {
+  if (event) {
+    var charCode = (event.which) ? event.which : event.keyCode;
+    if (charCode != 190 && charCode > 31 && 
+       (charCode < 48 || charCode > 57) && 
+       (charCode < 96 || charCode > 105) && 
+       (charCode < 37 || charCode > 40) && 
+        charCode != 110 && charCode != 8 && charCode != 46 )
+       return false;
+  }
+  return true;
+}
+
+function minmax(value, min, max) 
+{
+    if(parseInt(value) < 1 || isNaN(value)) 
+        return 1; 
+    else if(parseInt(value) > 100) 
+        return 100; 
+    else return value;
+}
+
+function scripttime_minmax(value, min, max) 
+{
+    if(parseInt(value) < 1 || isNaN(value)) 
+        return 1; 
+    else if(parseInt(value) > 65535) 
+        return 65535; 
+    else return value;
+}
+
+function checkvalue() { 
+    var mystring = document.getElementById('of').value; 
+    if(!mystring.match(/\S/)) {
+        alert ('Output file path cannot be empty');
+        return false;
+    } else {
+        return true;
+    }
+}
+
+function setUI(uiState)
+{
+	//alert(JSON.stringify(uiState.data.out_file));
+	if(uiState.data.out_file !=null && uiState.data.out_file != undefined)
+	{
+		document.getElementById("of").value = uiState.data.out_file;
+		
+		if(uiState.data["SWF.PublishSettings.EnableDeblockingFilter"] == "true")
+		{
+			document.getElementById("myCheck1").checked = true;
+		}else
+		{
+			document.getElementById("myCheck1").checked = false;
+		}
+		
+		if(uiState.data["SWF.PublishSettings.EnableMovieCompression"] == "true")
+		{
+			document.getElementById("myCheck2").checked = true;
+		}else
+		{
+			document.getElementById("myCheck2").checked = false;
+		}
+		
+		if(uiState.data["SWF.PublishSettings.IncludeInvisibleLayer"] == "true")
+		{
+			document.getElementById("myCheck3").checked = true;
+		}else
+		{
+			document.getElementById("myCheck3").checked = false;
+		}
+		
+		if(uiState.data["SWF.PublishSettings.EnableSizeReport"] == "true")
+		{
+			document.getElementById("myCheck4").checked = true;
+		}else
+		{
+			document.getElementById("myCheck4").checked = false;
+		}
+		
+		if(uiState.data["SWF.PublishSettings.EnableOmitTrace"] == "true")
+		{
+			document.getElementById("myCheck5").checked = true;
+			
+		}else
+		{
+			document.getElementById("myCheck5").checked = false;
+		}
+	}
+}
+function publish_callback()
+{
+	//csInterface.closeExtension();
+}
+function evalScript(script, callback) {
+	csInterface.evalScript(script, callback);
+}
+function serializeUI()
+{
+	
+	
+	var event = new CSEvent();
+
+    var pubSettings = new Object();
+    pubSettings["out_file"] = document.getElementById("of").value.toString();
+    //
+    // Possible Values:
+    //   "FlashPlayer10.3"
+    //   "FlashPlayer11.1"
+    //   "FlashPlayer11.2"
+    //   "FlashPlayer11.3"
+    //   "FlashPlayer11.4"
+    //   "FlashPlayer11.5"
+    //   "FlashPlayer11.6"
+    //   "FlashPlayer11.7"
+    //   "FlashPlayer11.8"
+    //   "FlashPlayer11.9"    
+    //   "FlashPlayer12.0"
+    //   "FlashPlayer13.0"
+	var e1 = document.getElementById("dropdown1");
+	var selVal = e1.options[e1.selectedIndex].value;
+	
+    pubSettings["SWF.PublishSettings.PlayerVersion"] = selVal;
+
+    // ActionScriptVersion
+    pubSettings["SWF.PublishSettings.ASVersion"] = "3";
+
+    // Possible Values: 1 - 100
+	var e2 = document.getElementById("jpegId").value.toString();
+    pubSettings["SWF.PublishSettings.BitmapQuality"] = e2;
+	
+	
+
+    // Possible Values: "true", "false"    
+	if(document.getElementById("myCheck1").checked == true)
+	{
+		pubSettings["SWF.PublishSettings.EnableDeblockingFilter"] = "true";
+	}
+	else
+	{
+		pubSettings["SWF.PublishSettings.EnableDeblockingFilter"] = "false";
+	}
+
+	if(document.getElementById("myCheck2").checked == true)
+	{
+		pubSettings["SWF.PublishSettings.EnableMovieCompression"] = "true";
+	}
+	else
+	{
+		pubSettings["SWF.PublishSettings.EnableMovieCompression"] = "false";
+	}
+
+    // Possible Values: "Deflate", "LZMA"
+	var e3 = document.getElementById("myList3");
+	var selVal3 = e3.options[e3.selectedIndex].text;
+	
+    pubSettings["SWF.PublishSettings.MovieCompressionType"] = selVal3;
+
+    // Possible Values: "true", "false" 
+	
+	if(document.getElementById("myCheck3").checked == true)
+	{
+		pubSettings["SWF.PublishSettings.IncludeInvisibleLayer"] = "true";
+	}
+	else
+	{
+		pubSettings["SWF.PublishSettings.IncludeInvisibleLayer"] = "false";
+	}
+	
+	if(document.getElementById("myCheck4").checked == true)
+	{
+		// Possible Values: "true", "false"        
+		pubSettings["SWF.PublishSettings.EnableSizeReport"] = "true";
+	}
+	else
+	{
+		pubSettings["SWF.PublishSettings.EnableSizeReport"] = "false";
+	}
+
+    // Possible Values: "true", "false"    
+	if(document.getElementById("myCheck5").checked == true)    
+	{
+		pubSettings["SWF.PublishSettings.EnableOmitTrace"] = "true";
+	}
+	else
+	{
+		pubSettings["SWF.PublishSettings.EnableOmitTrace"] = "false";
+	}
+
+    // Possible Values: "true", "false"        
+    //pubSettings["SWF.PublishSettings.EnablePermitDebug"] = "true";
+
+    // Possible Values: "true", "false"        
+    //pubSettings["SWF.PublishSettings.EnableImportProtection"] = "true";
+
+    //pubSettings["SWF.PublishSettings.ImportPassword"] = "test";
+
+    // Possible Values: "true", "false"        
+    //pubSettings["SWF.PublishSettings.EnableTelemetry"] = "true";
+
+    //pubSettings["SWF.PublishSettings.TelemetryPassword"] = "test123";
+	
+	var e4 = document.getElementById("timeId").value.toString();
+
+    pubSettings["SWF.PublishSettings.ScriptTimeLimit"] = e4;
+	
+
+    // Possible Values: "LocalAccess", "NetworkAccess"    
+	var e5 = document.getElementById("myList4");
+	var selVal5 = e5.options[e5.selectedIndex].value;
+	
+    pubSettings["SWF.PublishSettings.PlaybackSecurity"] = selVal5;    
+
+    // Possible Values: "None", "Direct", "GPU"   
+	var e6 = document.getElementById("myList5");
+	var selVal6 = e6.options[e6.selectedIndex].value;	
+	
+    pubSettings["SWF.PublishSettings.HardwareAcceleration"] = "None";
+
+	event.scope = "APPLICATION";
+	event.type = "com.adobe.events.flash.extension.savestate";
+    event.data = JSON.stringify(pubSettings);
+	event.extensionId = "org.openfl.OpenFLExtension.PublishSettings";
+	csInterface.dispatchEvent(event);
+	
+	
+
+	evalScript("fl.getDocumentDOM().publish();",publish_callback);
+}
+
+function onLoaded() {
+	document.getElementById("jpegId").defaultValue = "80";
+	document.getElementById("timeId").defaultValue = "15";
+	im_folder = "";
+	csInterface = new CSInterface();
+ 	csInterface.addEventListener("com.adobe.events.flash.extension.setstate", setUI);
+	var event = new CSEvent();
+	event.scope = "APPLICATION";
+	event.type = "com.adobe.events.flash.extensionLoaded";
+	event.data = "Test Event";
+	event.extensionId = "org.openfl.OpenFLExtension.PublishSettings";
+	csInterface.dispatchEvent(event);
+}
+
+function onPublish() {
+	var retVal = checkvalue();
+	if(retVal)
+	serializeUI();
+}
+
+function opsd() {
+   var result = window.cep.fs.showOpenDialog();
+    document.getElementById("of").value = result.data;
+}
+
+/*
+function imsd() {
+    var result = window.cep.fs.showOpenDialog();
+	im_folder = result.data;
+    document.getElementById("im").value = im_folder;
+}
+*/
+</script>
+
+<body onLoad="onLoaded()">
+    <div id="container">
+	<p>
+		<label class="myLabel">Target:</label>
+			<select id="dropdown1" class="myList">
+				<option value = "FlashPlayer10.3">Flash Player 10.3</option>
+				<option value = "FlashPlayer11.1">Flash Player 11.1</option>
+				<option value = "FlashPlayer11.2">Flash Player 11.2</option>
+				<option value = "FlashPlayer11.3">Flash Player 11.3</option>
+				<option value = "FlashPlayer11.4">Flash Player 11.4</option>
+				<option value = "FlashPlayer11.5">Flash Player 11.5</option>
+				<option value = "FlashPlayer11.6">Flash Player 11.6</option>
+				<option value = "FlashPlayer11.7">Flash Player 11.7</option>
+				<option value = "FlashPlayer11.8">Flash Player 11.8</option>
+				<option value = "FlashPlayer11.9">Flash Player 11.9</option>
+				<option value = "FlashPlayer12.0">Flash Player 12</option>
+				<option value = "FlashPlayer13.0">Flash Player 13</option>
+			</select>
+			
+		<br><label class="myLabel">Script:</label>
+		<select id="dropdown2" class="myList">
+			<option value = "1">ActionScript 3.0</option>
+		</select>
+
+        <br><label class="myLabel">Output File :</label>
+        <input type="text"  id="of">
+        <input id="OPShowOpenDialog" type="image" src="folderOpen.png" style="left:10px" onclick="opsd()" >
+        <br/>
+	</p>
+	
+	<p>
+		<br><label class="myLabel3">JPEG Quality:</label>
+		<input type="text" id="jpegId" width="50px" onkeydown="return isNumber(event);" onkeyup="this.value = minmax(this.value, 1, 100)"><br/>
+		<br/>
+    </p>
+	<p>
+		<input type="checkbox" id="myCheck1">Enable JPEG deblocking<br/>
+    </p>
+	<p>
+		<details open>
+			<summary>ADVANCED</summary>
+				<p>
+				<input type="checkbox" id="myCheck2" checked>Compress movie
+					<select id = "myList3" class="myList">
+						<option value = "1">Deflate</option>
+						<option value = "2">LZMA</option>
+					</select><br>
+					<input type="checkbox" id="myCheck3" checked>Include hidden layers<br>
+					<input type="checkbox" id="myCheck4">Generate size report<br>
+					<input type="checkbox" id="myCheck5">Omit trace statements<br>
+	</p>
+	<p>
+		<label class="myLabel4">Script time limit:</label>
+		<input type="text" id="timeId" onkeydown="return isNumber(event);" onkeyup="this.value = scripttime_minmax(this.value, 1, 65535)"">
+		<label class="myLabel2">seconds</label></p>
+	<p>
+		<br>
+		<br><label class="myLabel4">Local playback security:</label>
+			<select id = "myList4" class="myListClass">
+				<option value = "LocalAccess">Access local files only</option>
+				<option value = "NetworkAccess">Access network only</option>
+			</select>
+	</p>
+	<p>
+		<label class="myLabel4">Hardware acceleration:</label>
+			<select id = "myList5" class="myListClass">
+				<option value = "None">None</option>
+				<option value = "Direct">Level 1 - Direct</option>
+				<option value = "GPU">Level 2 - GPU</option>
+			</select>
+	</p>
+		</details>
+	
+            <!--label class="myLabel">Images :</label>
+            <input type="text"  id="im">
+            <input id="IMShowOpenDialog" type="image" src="folderOpen.png" style="left:10px" onclick="imsd()" -->
+       
+    </div>
+
+    <button id="publish" onclick="onPublish()">Publish</button>
+</body>
+
+</html>

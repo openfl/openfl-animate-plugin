@@ -1,0 +1,110 @@
+<xml>
+	
+	<set name="HXCPP_CPP11" value="1" />
+	<set name="HXCPP_M64" value="1" />
+	
+	<include name="${HXCPP}/build-tool/BuildCommon.xml" />
+	
+	<set name="OUTPUT_DIR" value="../OpenFLExtension/plugin/lib/win/" if="windows" unless="OUTPUT_DIR" />
+	<set name="OUTPUT_DIR" value="../OpenFLExtension/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS" if="mac" unless="OUTPUT_DIR" />
+	
+	<set name="NATIVE_TOOLKIT_PATH" value="lib" unless="NATIVE_TOOLKIT_PATH" />
+	<set name="XDK_PATH" value="lib/xdk" unless="XDK_PATH" />
+	
+	<files id="openfl-plugin">
+		
+		<compilerflag value="-Iinclude" />
+		<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/xerces-c/src" />
+		<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/json" />
+		<compilerflag value="-I${XDK_PATH}/app/include/common" />
+		<compilerflag value="-I${XDK_PATH}/app/include/interfaces" />
+		<compilerflag value="-I${XDK_PATH}/app/include/interfaces/DOM" />
+		<compilerflag value="-I${XDK_PATH}/core/include/common" />
+		<compilerflag value="-I${XDK_PATH}/core/include/interfaces" />
+		
+		<compilerflag value="-DNDEBUG" unless="debug" />
+		<compilerflag value="/Zc:wchar_t-" if="windows" />
+		
+		<file name="src/DocType.cpp" />
+		<file name="src/Main.cpp" />
+		<file name="src/MyXmlParser.cpp" />
+		<file name="src/OutputWriter.cpp" />
+		<file name="src/Publisher.cpp" />
+		<file name="src/Utils.cpp" />
+		
+	</files>
+	
+	<include name="lib/json/files.xml" />
+	
+	<set name="DEBUGEXTRA" value="-debug" if="fulldebug" />
+	
+	<target id="openfl-plugin" output="OpenFLPlugin${DEBUGEXTRA}" tool="linker" toolid="${STD_MODULE_LINK}">
+		
+		<outdir name="${OUTPUT_DIR}" />
+		
+		<files id="openfl-plugin" />
+		<files id="native-toolkit-json" />
+		
+		<section if="windows">
+			
+			<ext value=".fcm" />
+			
+			<lib name="${NATIVE_TOOLKIT_PATH}/xerces-c/Build/Win64/VC10/Release/xerces-c_3.lib" />
+			
+			
+		</section>
+		
+		<section if="mac">
+			
+			<ext value="" />
+			
+		</section>
+		
+		<!-- <section if="windows">
+			
+			
+			"kernel32.lib" "user32.lib" "gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib" "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib" "odbccp32.lib" 
+			
+			<lib name="gdi32.lib" />
+			<lib name="opengl32.lib" />
+			<lib name="user32.lib" />
+			<lib name="kernel32.lib" />
+			<lib name="advapi32.lib" />
+			<lib name="winmm.lib" />
+			<lib name="imm32.lib"  />
+			<lib name="ole32.lib" />
+			<lib name="oleaut32.lib" />
+			<lib name="version.lib" />
+			<lib name="ws2_32.lib"  />
+			<lib name="wldap32.lib" />
+			<lib name="shell32.lib" />
+			<lib name="comdlg32.lib" />
+			
+		</section>
+		
+		<section if="mac">
+			
+			<vflag name="-l" value="iconv"/>
+			<vflag name="-framework" value="IOKit" />
+			<vflag name="-framework" value="Foundation" />
+			<vflag name="-framework" value="CoreAudio" />
+			<vflag name="-framework" value="Cocoa" />
+			<vflag name="-framework" value="OpenGL" />
+			<vflag name="-framework" value="AudioToolbox" />
+			<vflag name="-framework" value="AudioUnit" />
+			<vflag name="-framework" value="ForceFeedback" />
+			<vflag name="-framework" value="Carbon" />
+			<vflag name="-framework" value="AppKit" />
+			<vflag name="-framework" value="OpenAL"/>
+			
+		</section> -->
+		
+	</target>
+	
+	<target id="default">
+		
+		<target id="openfl-plugin" />
+		
+	</target>
+	
+</xml>
