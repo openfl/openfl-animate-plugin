@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include "Version.h"
 #include "FCMTypes.h"
 #include "FCMPluginInterface.h"
 #include "Exporter/Service/IResourcePalette.h"
@@ -36,15 +37,25 @@
 #include "FillStyle/ISolidFillStyle.h"
 #include "FillStyle/IGradientFillStyle.h"
 #include "FillStyle/IBitmapFillStyle.h"
+#include "FrameElement/IClassicText.h"
+#include "FrameElement/ITextStyle.h"
 #include "Exporter/Service/IFrameCommandGenerator.h"
-
 #include "OutputWriter.h"
+
 
 /* -------------------------------------------------- Forward Decl */
 
 using namespace FCM;
 using namespace Publisher;
 using namespace Exporter::Service;
+
+namespace Application
+{
+    namespace Service
+    {
+        class IOutputConsoleService;
+    }
+}
 
 namespace OpenFL
 {
@@ -73,12 +84,20 @@ namespace DOM
 
 /* -------------------------------------------------- Macros / Constants */
 
+#ifdef USE_SWF_EXPORTER_SERVICE
+    #define OUTPUT_FILE_EXTENSION       "swf"
+#else
+    #define OUTPUT_FILE_EXTENSION       "html"
+#endif
+
+
 namespace OpenFL
 {
-    // {835B2A74-9646-43AD-BA86-A35F4E0ECD1B}
+    // {1635256D-2F63-4715-BC70-6B2948CC84D5}
     const FCMCLSID CLSID_Publisher =
-        {0x835b2a74, 0x9646, 0x43ad, {0xba, 0x86, 0xa3, 0x5f, 0x4e, 0xe, 0xcd, 0x1b}};
-    
+        {0x1635256d, 0x2f63, 0x4715, {0xbc, 0x70, 0x6b, 0x29, 0x48, 0xcc, 0x84, 0xd5}};
+
+
     // {D5830903-02D6-4133-A1F1-F272D29A1802}
     const FCM::FCMCLSID CLSID_ResourcePalette =
         {0xd5830903, 0x2d6, 0x4133, {0xa1, 0xf1, 0xf2, 0x72, 0xd2, 0x9a, 0x18, 0x2}};
@@ -104,7 +123,7 @@ namespace OpenFL
 
     class CPublisher : public IPublisher, public FCMObjectBase
     {
-        BEGIN_INTERFACE_MAP(CPublisher,FCM_PLUGIN_VERSION)
+        BEGIN_INTERFACE_MAP(CPublisher, SAMPLE_PLUGIN_VERSION)
             INTERFACE_ENTRY(IPublisher)
         END_INTERFACE_MAP
         
@@ -116,7 +135,8 @@ namespace OpenFL
             const PIFCMDictionary pDictConfig);
 
         virtual FCM::Result _FCMCALL Publish(
-            DOM::PITimeline pITimeline, 
+            DOM::PIFLADocument pFlaDocument, 
+            DOM::PITimeline pTimeline, 
             const Exporter::Service::RANGE &frameRange, 
             const PIFCMDictionary pDictPublishSettings, 
             const PIFCMDictionary pDictConfig);
@@ -130,13 +150,30 @@ namespace OpenFL
     private:
 
         bool ReadString(
-            FCM::PIFCMDictionary pDict, 
+            const FCM::PIFCMDictionary pDict, 
             FCM::StringRep8 key, 
             std::string& retString);
+
+        FCM::Result GetOutputFileName(        
+            DOM::PIFLADocument pFlaDocument, 
+            DOM::PITimeline pITimeline, 
+            const PIFCMDictionary pDictPublishSettings,
+            std::string& outFile);
+
+        FCM::Result Export(
+            DOM::PIFLADocument pFlaDocument, 
+            DOM::PITimeline pTimeline, 
+            const Exporter::Service::RANGE* pFrameRange, 
+            const PIFCMDictionary pDictPublishSettings, 
+            const PIFCMDictionary pDictConfig);
+
+        FCM::Boolean IsPreviewNeeded(const PIFCMDictionary pDictConfig);
 
         FCM::Result Init();
 
         void LaunchBrowser(const std::string& outputFileName);
+
+        FCM::Result ExportLibraryItems(FCM::FCMListPtr pLibraryItemList);
 
     private:
 
@@ -149,17 +186,13 @@ namespace OpenFL
     {
     public:
 
-        BEGIN_INTERFACE_MAP(ResourcePalette, FCM_PLUGIN_VERSION)    
+        BEGIN_INTERFACE_MAP(ResourcePalette, SAMPLE_PLUGIN_VERSION)    
             INTERFACE_ENTRY(IResourcePalette)            
         END_INTERFACE_MAP    
 
-        virtual FCM::Result _FCMCALL AddMovieClip(
+        virtual FCM::Result _FCMCALL AddSymbol(
             FCM::U_Int32 resourceId, 
             FCM::StringRep16 pName, 
-            Exporter::Service::PITimelineBuilder pTimelineBuilder);
-
-        virtual FCM::Result _FCMCALL AddGraphic(
-            FCM::U_Int32 resourceId, 
             Exporter::Service::PITimelineBuilder pTimelineBuilder);
 
         virtual FCM::Result _FCMCALL AddShape(
@@ -189,6 +222,10 @@ namespace OpenFL
         void Init(IOutputWriter* pOutputWriter);
 
         void Clear();
+
+        FCM::Result HasResource(
+            const std::string& name, 
+            FCM::Boolean& hasResource);
 
     private:
 
@@ -220,11 +257,29 @@ namespace OpenFL
         FCM::Result ExportBitmapFillStyle(
             DOM::FillStyle::IBitmapFillStyle* pBitmapFillStyle);
 
+        FCM::Result CreateImageFileName(DOM::ILibraryItem* pLibItem, std::string& name);
+
+        FCM::Result CreateSoundFileName(DOM::ILibraryItem* pLibItem, std::string& name);
+
+		FCM::Result GetFontInfo(DOM::FrameElement::ITextStyle* pTextStyleItem, std::string& name,FCM::U_Int16 fontSize);
+
+        FCM::Result HasFancyStrokes(DOM::FrameElement::PIShape pShape, FCM::Boolean& hasFancy); 
+
+        FCM::Result ConvertStrokeToFill(
+            DOM::FrameElement::PIShape pShape,
+            DOM::FrameElement::PIShape& pNewShape);
+
     private:
 
         IOutputWriter* m_pOutputWriter;
 
         std::vector<FCM::U_Int32> m_resourceList;
+
+        FCM::U_Int32 m_imageFileNameLabel;
+
+        FCM::U_Int32 m_soundFileNameLabel;
+
+        std::vector<std::string> m_resourceNames;
     };
 
 
@@ -232,7 +287,7 @@ namespace OpenFL
     {
     public:
 
-        BEGIN_INTERFACE_MAP(TimelineBuilder, FCM_PLUGIN_VERSION)    
+        BEGIN_INTERFACE_MAP(TimelineBuilder, SAMPLE_PLUGIN_VERSION)    
             INTERFACE_ENTRY(ITimelineBuilder)            
         END_INTERFACE_MAP    
 
@@ -278,7 +333,7 @@ namespace OpenFL
 
         virtual FCM::Result _FCMCALL UpdateGraphicFilter(
             FCM::U_Int32 objectId, 
-            PIFCMList& pFilterable);
+            PIFCMList pFilterable);
             
         virtual FCM::Result _FCMCALL UpdateDisplayTransform(
             FCM::U_Int32 objectId, 
@@ -290,7 +345,11 @@ namespace OpenFL
 
         virtual FCM::Result _FCMCALL ShowFrame();        
 
-        virtual FCM::Result _FCMCALL AddFrameScript(FCM::StringRep16* ppScript);
+        virtual FCM::Result _FCMCALL AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum);
+
+        virtual FCM::Result _FCMCALL RemoveFrameScript(FCM::U_Int32 layerNum);
+
+        virtual FCM::Result _FCMCALL SetFrameLabel(FCM::StringRep16 pLabel, DOM::KeyFrameLabelType labelType);
 
         TimelineBuilder();
 
@@ -317,7 +376,7 @@ namespace OpenFL
     {
     public:
 
-        BEGIN_INTERFACE_MAP(TimelineBuilderFactory, FCM_PLUGIN_VERSION)    
+        BEGIN_INTERFACE_MAP(TimelineBuilderFactory, SAMPLE_PLUGIN_VERSION)    
             INTERFACE_ENTRY(ITimelineBuilderFactory)            
         END_INTERFACE_MAP    
 

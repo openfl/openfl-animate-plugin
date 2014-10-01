@@ -5,8 +5,8 @@
 	
 	<include name="${HXCPP}/build-tool/BuildCommon.xml" />
 	
-	<set name="OUTPUT_DIR" value="../OpenFLExtension/plugin/lib/win/" if="windows" unless="OUTPUT_DIR" />
-	<set name="OUTPUT_DIR" value="../OpenFLExtension/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS" if="mac" unless="OUTPUT_DIR" />
+	<set name="OUTPUT_DIR" value="../OpenFLPlugin/plugin/lib/win/" if="windows" unless="OUTPUT_DIR" />
+	<set name="OUTPUT_DIR" value="../OpenFLPlugin/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS" if="mac" unless="OUTPUT_DIR" />
 	
 	<set name="NATIVE_TOOLKIT_PATH" value="lib" unless="NATIVE_TOOLKIT_PATH" />
 	<set name="XDK_PATH" value="lib/xdk" unless="XDK_PATH" />
@@ -23,6 +23,7 @@
 		<compilerflag value="-I${XDK_PATH}/core/include/interfaces" />
 		
 		<compilerflag value="-DNDEBUG" unless="debug" />
+		<compilerflag value="-D_WINDOWS" if="windows" />
 		<compilerflag value="/Zc:wchar_t-" if="windows" />
 		
 		<file name="src/DocType.cpp" />
@@ -50,7 +51,7 @@
 			<ext value=".fcm" />
 			
 			<lib name="${NATIVE_TOOLKIT_PATH}/xerces-c/Build/Win64/VC10/Release/xerces-c_3.lib" />
-			
+			<lib name="Shell32.lib" />
 			
 		</section>
 		

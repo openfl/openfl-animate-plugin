@@ -11,4 +11,4 @@ if %errorlevel% neq 0 (
 @echo on
 
 cd ..
-xcopy OpenFLExtension %APPDATA%\Adobe\CEP\extensions\OpenFLExtension /s /i /y
+xcopy OpenFLPlugin %APPDATA%\Adobe\CEP\extensions\OpenFLPlugin /s /i /y

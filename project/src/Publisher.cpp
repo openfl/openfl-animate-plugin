@@ -34,6 +34,7 @@
 #include "StrokeStyle/IRaggedStrokeStyle.h"
 #include "StrokeStyle/ISolidStrokeStyle.h"
 #include "StrokeStyle/IStippleStrokeStyle.h"
+#include "StrokeStyle/IStrokeWidth.h"
 
 #include "FillStyle/ISolidFillStyle.h"
 #include "FillStyle/IGradientFillStyle.h"
@@ -43,15 +44,27 @@
 #include "MediaInfo/IBitmapInfo.h"
 #include "FrameElement/IBitmapInstance.h"
 #include "FrameElement/ISound.h"
+#include "MediaInfo/ISoundInfo.h"
 #include "LibraryItem/IMediaItem.h"
+#include "LibraryItem/IFolderItem.h"
+#include "LibraryItem/IFontItem.h"
+#include "LibraryItem/ISymbolItem.h"
 #include "ILibraryItem.h"
+
+#include "FrameElement/IClassicText.h"
+#include "FrameElement/ITextStyle.h"
+#include "FrameElement/IParagraph.h"
+#include "FrameElement/ITextRun.h"
+#include "FrameElement/ITextBehaviour.h"
 
 #include "Service/Shape/IRegionGeneratorService.h"
 #include "Service/Shape/IFilledRegion.h"
 #include "Service/Shape/IStrokeGroup.h"
 #include "Service/Shape/IPath.h"
 #include "Service/Shape/IEdge.h"
+#include "Service/Shape/IShapeService.h"
 #include "Service/Image/IBitmapExportService.h"
+
 
 #include "Utils/DOMTypes.h"
 #include "Utils/ILinearColorGradient.h"
@@ -64,7 +77,6 @@
 #include "Exporter/Service/ITimelineBuilderFactory.h"
 
 #include "Exporter/Service/ISWFExportService.h"
-#include "Application/Service/IOutputConsoleService.h"
 
 
 namespace OpenFL
@@ -74,6 +86,7 @@ namespace OpenFL
 	
     CPublisher::CPublisher()
     {
+
     }
 
     CPublisher::~CPublisher()
@@ -81,30 +94,65 @@ namespace OpenFL
 
     }
 
+
     FCM::Result CPublisher::Publish(
         DOM::PIFLADocument pFlaDocument, 
         const PIFCMDictionary pDictPublishSettings, 
         const PIFCMDictionary pDictConfig)
     {
+        return Export(pFlaDocument, NULL, NULL, pDictPublishSettings, pDictConfig);
+    }
+
+    // This function will be currently called in "Test-Scene" workflow. 
+    // In future, it might be called in other workflows as well. 
+    FCM::Result CPublisher::Publish(
+        DOM::PIFLADocument pFlaDocument, 
+        DOM::PITimeline pTimeline, 
+        const Exporter::Service::RANGE &frameRange, 
+        const PIFCMDictionary pDictPublishSettings, 
+        const PIFCMDictionary pDictConfig)
+    {
+        return Export(pFlaDocument, pTimeline, &frameRange, pDictPublishSettings, pDictConfig);
+    }
+
+
+    FCM::Result CPublisher::Export(
+        DOM::PIFLADocument pFlaDocument, 
+        DOM::PITimeline pTimeline, 
+        const Exporter::Service::RANGE* pFrameRange, 
+        const PIFCMDictionary pDictPublishSettings, 
+        const PIFCMDictionary pDictConfig)
+    {
         std::string outFile;
         FCM::Result res;
+        FCM::FCMGUID guid;
         FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
 
         Init();
 
-        FCM::Result tempRes = GetCallback()->GetService(FlashApplication::Service::FLASHAPP_OUTPUT_CONSOLE_SERVICE, pUnk.m_Ptr);
-        ASSERT(FCM_SUCCESS_CODE(tempRes));
-        
-        FCM::AutoPtr<FlashApplication::Service::IOutputConsoleService> outputConsoleService = pUnk;
-        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = OpenFL::Utils::GetCallocService(GetCallback());
+        pCalloc = OpenFL::Utils::GetCallocService(GetCallback());
         ASSERT(pCalloc.m_Ptr != NULL);
 
-        //trace
-        FCM::StringRep16 outputString = Utils::ToString16(std::string("\nPublishing begins...."),GetCallback());
-        outputConsoleService->Trace(outputString);
-        pCalloc->Free(outputString);
-        
-#ifndef USE_EXPORTER_SERVICE
+        res = pFlaDocument->GetTypeId(guid);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        std::string pub_guid = Utils::ToString(guid);
+        Utils::Trace(GetCallback(), "Publishing begins for document with GUID: %s\n", 
+            pub_guid.c_str());
+
+        res = GetOutputFileName(pFlaDocument, pTimeline, pDictPublishSettings, outFile);
+        if (FCM_FAILURE_CODE(res))
+        {
+            // FLA is untitled. Ideally, we should use a temporary location for output generation.
+            // However, for now, we report an error.
+            Utils::Trace(GetCallback(), "Failed to publish. Either save the FLA or provide output path in publish settings.\n");
+            return res;
+        }
+
+        Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
+
+#ifdef USE_SWF_EXPORTER_SERVICE
 
         // Use the SWF Exporter Service to export to a SWF
 		
@@ -114,19 +162,20 @@ namespace OpenFL
             return res;
         }
 		
-        // Read the output file name from the publish settings
-        ReadString(pDictPublishSettings, (FCM::StringRep8)"out_file", outFile);
         FCM::StringRep16 outputFilePath = Utils::ToString16(outFile, GetCallback());
-		
-        //trace
-        outputString = Utils::ToString16(std::string("\nCreating the SWF file "),GetCallback());
-        outputConsoleService->Trace(outputString);
-        pCalloc->Free(outputString);
-        outputConsoleService->Trace(outputFilePath);
-        
+
         FCM::AutoPtr<Exporter::Service::ISWFExportService> pSWfExportService = pUnk;
 
-        res = pSWfExportService->ExportToFile(pFlaDocument, pDictPublishSettings, outputFilePath);
+        if (!pTimeline)
+        {
+            // Export complete document
+            res = pSWfExportService->ExportToFile(pFlaDocument, outputFilePath);
+        }
+        else
+        {
+            // Export only specified timeline
+            res = pSWfExportService->ExportToFile(pTimeline, outputFilePath);
+        }
         pCalloc->Free(outputFilePath);
         if (FCM_SUCCESS_CODE(res))
         {
@@ -139,7 +188,11 @@ namespace OpenFL
         DOM::Utils::COLOR color;
         FCM::U_Int32 stageHeight;
         FCM::U_Int32 stageWidth;
+        FCM::Double fps;
+        FCM::U_Int32 framesPerSec;
         AutoPtr<ITimelineBuilderFactory> pTimelineBuilderFactory;
+        FCM::FCMListPtr pTimelineList;
+        FCM::U_Int32 timelineCount;
 
         // Create a output writer
         std::auto_ptr<IOutputWriter> pOutputWriter(new JSONOutputWriter(GetCallback()));
@@ -147,18 +200,6 @@ namespace OpenFL
         {
             return FCM_MEM_NOT_AVAILABLE;
         }
-
-        // Read the output file name from the publish settings
-        ReadString(pDictPublishSettings, (FCM::StringRep8)"out_file", outFile);
-        
-        //trace
-        FCM::StringRep16 outputFilePath = Utils::ToString16(outFile, GetCallback());
-        outputString = Utils::ToString16(std::string("\nCreating "),GetCallback());
-        outputConsoleService->Trace(outputString);
-        pCalloc->Free(outputString);
-        outputConsoleService->Trace(outputFilePath);
-        pCalloc->Free(outputFilePath);
-
         
         // Start output
         pOutputWriter->StartOutput(outFile);
@@ -181,14 +222,6 @@ namespace OpenFL
         pResPalette->Clear();
         pResPalette->Init(pOutputWriter.get());
 
-        // Get all the timelines for the document
-        FCM::FCMListPtr pTimelineList;
-        res = pFlaDocument->GetTimelines(pTimelineList.m_Ptr);
-        if (FCM_FAILURE_CODE(res))
-        {
-            return res;
-        }
-
         res = pFlaDocument->GetBackgroundColor(color);
         ASSERT(FCM_SUCCESS_CODE(res));
 
@@ -198,38 +231,113 @@ namespace OpenFL
         res = pFlaDocument->GetStageWidth(stageWidth);
         ASSERT(FCM_SUCCESS_CODE(res));
 
-        res = pOutputWriter->StartDocument(color, stageHeight, stageWidth);
+        res = pFlaDocument->GetFrameRate(fps);
         ASSERT(FCM_SUCCESS_CODE(res));
 
-        FCM::U_Int32 timelineCount;
-        res = pTimelineList->Count(timelineCount);
-        if (FCM_FAILURE_CODE(res))
+        framesPerSec = (FCM::U_Int32)fps;
+
+        res = pOutputWriter->StartDocument(color, stageHeight, stageWidth, framesPerSec);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        // Export complete document ?
+        if (!pTimeline)
         {
-            return res;
-        }
-
-        // Generate frame commands for each timeline
-        for (FCM::U_Int32 i = 0; i < timelineCount; i++)
-        {
-            Exporter::Service::RANGE range;
-            AutoPtr<ITimelineBuilder> pTimelineBuilder;
-            ITimelineWriter* pTimelineWriter;
-
-            AutoPtr<DOM::ITimeline> timeline = pTimelineList[i];
-
-            range.min = 0;
-            res = timeline->GetMaxFrameCount(range.max);
+            // Get all the timelines for the document
+            res = pFlaDocument->GetTimelines(pTimelineList.m_Ptr);
             if (FCM_FAILURE_CODE(res))
             {
                 return res;
             }
 
-            range.max--;
+            res = pTimelineList->Count(timelineCount);
+            if (FCM_FAILURE_CODE(res))
+            {
+                return res;
+            }
+
+            /*
+             * IMPORTANT NOTE: 
+             *  
+             * For the current sample plugin, multiple scene export is not supported.
+             * Supporting export of multiple scene is little tricky. This is due to
+             * the fact that IFrameCommandGenerator::GenerateFrameCommands() expects
+             * that a new empty resource palette is passed for each timeline.
+             *
+             * In other words, for each timeline (scene), a resource palette is exported.
+             * So, if a resource is present in 2 scenes, its definition will be replicated 
+             * in both the resource palettes. Plugin can choose to optimize by comparing the
+             * resource names to find the common resources and put it in a global resource 
+             * palette and also modifying the timeline builder commands to use the new 
+             * resource ids.
+             *
+             * For our current implementation, we chosen to keep it simple and not support
+             * multiple scenes. For this plugin to work, the feature "Scene" must be disabled 
+             * by the corresponding DocType.
+             */
+            ASSERT(timelineCount == 1);
+
+            // Generate frame commands for each timeline
+            for (FCM::U_Int32 i = 0; i < timelineCount; i++)
+            {
+                Exporter::Service::RANGE range;
+                AutoPtr<ITimelineBuilder> pTimelineBuilder;
+                ITimelineWriter* pTimelineWriter;
+
+                AutoPtr<DOM::ITimeline> timeline = pTimelineList[i];
+
+                range.min = 0;
+                res = timeline->GetMaxFrameCount(range.max);
+                if (FCM_FAILURE_CODE(res))
+                {
+                    return res;
+                }
+
+                range.max--;
+
+                // Generate frame commands
+                res = m_frameCmdGeneratorService->GenerateFrameCommands(
+                    timeline, 
+                    range, 
+                    pDictPublishSettings,
+                    m_pResourcePalette, 
+                    pTimelineBuilderFactory, 
+                    pTimelineBuilder.m_Ptr);
+
+                if (FCM_FAILURE_CODE(res))
+                {
+                    return res;
+                }
+
+                ((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
+            }
+
+            res = pOutputWriter->EndDocument();
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            res = pOutputWriter->EndOutput();
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            // Export the library items with linkages
+            FCM::FCMListPtr pLibraryItemList;
+            res = pFlaDocument->GetLibraryItems(pLibraryItemList.m_Ptr);
+            if (FCM_FAILURE_CODE(res))
+            {
+                return res;
+            }
+
+            ExportLibraryItems(pLibraryItemList);
+        }
+        else
+        {
+            // Export a timeline
+            AutoPtr<ITimelineBuilder> pTimelineBuilder;
+            ITimelineWriter* pTimelineWriter;
 
             // Generate frame commands
             res = m_frameCmdGeneratorService->GenerateFrameCommands(
-                timeline, 
-                range, 
+                pTimeline, 
+                *pFrameRange, 
+                pDictPublishSettings,
                 m_pResourcePalette, 
                 pTimelineBuilderFactory, 
                 pTimelineBuilder.m_Ptr);
@@ -240,48 +348,120 @@ namespace OpenFL
             }
 
             ((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
+
+            res = pOutputWriter->EndDocument();
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            res = pOutputWriter->EndOutput();
+            ASSERT(FCM_SUCCESS_CODE(res));
         }
 
+        if (IsPreviewNeeded(pDictConfig))
+        {
+            // Launch the browser
+            std::string fileName;
+            Utils::GetFileName(outFile, fileName);
+            LaunchBrowser(fileName);
+        }
 
-        res = pOutputWriter->EndDocument();
-        ASSERT(FCM_SUCCESS_CODE(res));
-
-        res = pOutputWriter->EndOutput();
-        ASSERT(FCM_SUCCESS_CODE(res));
-
-        // Launch the browser
-        std::string fileName;
-        Utils::GetFileName(outFile, fileName);
-        LaunchBrowser(fileName);
 #endif
         return FCM_SUCCESS;
     }
 
 
-    // Not tested yet.
-    FCM::Result CPublisher::Publish(
-        DOM::PITimeline pITimeline, 
-        const Exporter::Service::RANGE &frameRange, 
-        const PIFCMDictionary pDictPublishSettings, 
-        const PIFCMDictionary pDictConfig)
+    FCM::Result CPublisher::ClearCache()
     {
+        if (m_pResourcePalette)
+        {
+            ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
+
+            pResPalette->Clear();
+        }
         return FCM_SUCCESS;
     }
 
 
-    // Not tested yet.
-    FCM::Result CPublisher::ClearCache()
+    FCM::Result CPublisher::GetOutputFileName(        
+        DOM::PIFLADocument pFlaDocument, 
+        DOM::PITimeline pTimeline, 
+        const PIFCMDictionary pDictPublishSettings,
+        std::string& outFile)
     {
-        ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
+        FCM::Result res = FCM_SUCCESS;
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
 
-        pResPalette->Clear();
+        pCalloc = OpenFL::Utils::GetCallocService(GetCallback());
+        ASSERT(pCalloc.m_Ptr != NULL);
 
-        return FCM_SUCCESS;
+        // Read the output file name from the publish settings
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"out_file", outFile);
+        if (outFile.empty())
+        {
+            FCM::StringRep16 path;
+
+            res = pFlaDocument->GetPath(&path);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            if (path)
+            {
+                std::string parent;
+                std::string ext;
+                std::string filePath = Utils::ToString(path, GetCallback());
+
+                Utils::GetFileNameWithoutExtension(filePath, outFile);
+
+                if (pTimeline)
+                {
+                    FCM::StringRep16 pSceneName;
+                    std::string sceneName;
+
+                    res = pTimeline->GetName(&pSceneName);
+                    ASSERT(FCM_SUCCESS_CODE(res));
+
+                    sceneName = Utils::ToString(pSceneName, GetCallback());
+
+                    outFile += "_";
+                    outFile += sceneName;
+                }
+
+                outFile += ".";
+                outFile += OUTPUT_FILE_EXTENSION;
+
+                Utils::GetFileExtension(filePath, ext);
+                
+                // TODO: Convert "ext" to lower case and then compare
+                if (ext.compare("xfl") == 0)
+                {
+                    std::string immParent;
+                    Utils::GetParent(filePath, immParent);
+                    Utils::GetParent(immParent, parent);
+                }
+                else
+                {
+                    // FLA
+                    Utils::GetParent(filePath, parent);
+                }
+
+                // Extract the extension and append output file extension.
+                outFile = parent + outFile;
+
+                pCalloc->Free(path);
+
+                res = FCM_SUCCESS;
+            }
+            else
+            {
+                res = FCM_INVALID_PARAM;
+            }
+        }
+
+        return res;
     }
 
 
     bool CPublisher::ReadString(
-        FCM::PIFCMDictionary pDict,
+        const FCM::PIFCMDictionary pDict,
         FCM::StringRep8 key, 
         std::string &retString)
     {
@@ -308,6 +488,29 @@ namespace OpenFL
         return true;
     }
 
+
+    FCM::Boolean CPublisher::IsPreviewNeeded(const PIFCMDictionary pDictConfig)
+    {
+        FCM::Boolean found;
+        std::string previewNeeded;
+        FCM::Boolean res;
+
+        found = ReadString(pDictConfig, (FCM::StringRep8)kPublishSettingsKey_PreviewNeeded, previewNeeded);
+
+        res = true;
+        if (found)
+        {
+            if (previewNeeded == "true")
+            {
+                res = true;
+            }
+            else
+            {
+                res = false;
+            }
+        }
+        return res;
+    }
 
     FCM::Result CPublisher::Init()
     {
@@ -341,7 +544,7 @@ namespace OpenFL
         std::wstring tail;
         tail.assign(outputFileName.begin(), outputFileName.end());
         output += tail;
-        ShellExecute(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecute(NULL, (LPCSTR)L"open", (LPCSTR)output.c_str(), NULL, NULL, SW_SHOWNORMAL);
 
 #else
 
@@ -354,9 +557,114 @@ namespace OpenFL
 
     }
 
+    //
+    // Note: This function is NOT completely implemented but provides guidelines 
+    // on how this can be possibly done.      
+    //
+    FCM::Result CPublisher::ExportLibraryItems(FCM::FCMListPtr pLibraryItemList)
+    {
+        FCM::U_Int32 count = 0;
+        FCM::Result res;
+
+
+        ASSERT(pLibraryItemList);
+
+        res = pLibraryItemList->Count(count);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
+
+        for (FCM::U_Int32 index = 0; index < count ; index++)
+        {
+            FCM::StringRep16 pLibItemName = NULL;
+            std::string libItemName;
+            AutoPtr<IFCMDictionary> pDict;
+            AutoPtr<DOM::ILibraryItem> pLibItem = pLibraryItemList[index];
+
+            res = pLibItem->GetName(&pLibItemName);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            libItemName = Utils::ToString(pLibItemName, GetCallback());
+
+            AutoPtr<DOM::LibraryItem::IFolderItem> pFolderItem = pLibItem;
+            if (pFolderItem)
+            {
+                FCM::FCMListPtr pChildren;
+
+                res = pFolderItem->GetChildren(pChildren.m_Ptr);
+                ASSERT(FCM_SUCCESS_CODE(res));
+
+                // Export all its children
+                res = ExportLibraryItems(pChildren);
+                ASSERT(FCM_SUCCESS_CODE(res));
+            }
+            else
+            {
+                FCM::FCMDictRecTypeID type;
+                FCM::U_Int32 valLen;
+                AutoPtr<DOM::LibraryItem::IFontItem> pFontItem = pLibItem;
+                AutoPtr<DOM::LibraryItem::ISymbolItem> pSymbolItem = pLibItem;
+                AutoPtr<DOM::LibraryItem::IMediaItem> pMediaItem = pLibItem;
+
+                res = pLibItem->GetProperties(pDict.m_Ptr);
+                ASSERT(FCM_SUCCESS_CODE(res));
+
+                res = pDict->GetInfo(kLibProp_LinkageIdentifier_DictKey, 
+                    type, valLen);
+
+                if (FCM_SUCCESS_CODE(res))
+                {
+                    FCM::Boolean hasResource;
+                    ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
+
+                    // Library Item has linkage identifer
+
+                    if (pSymbolItem)
+                    {
+                        //
+                        // Check if it has been exported already by comparing names of resources 
+                        // already exported from the timelines.
+                        //
+                        res = pResPalette->HasResource(libItemName, hasResource);
+                        if (!hasResource)
+                        {
+                            // Resource is not yet exported. Export it using 
+                            // FrameCommandGenerator::GenerateFrameCommands
+                        }
+                    }
+                    else if (pMediaItem)
+                    {
+                        //
+                        // Check if it has been exported already by comparing names of resources 
+                        // already exported from the timelines.
+                        //
+                        res = pResPalette->HasResource(libItemName, hasResource);
+                        if (!hasResource)
+                        {
+                            // Resource is not yet exported. Export it.
+
+                            // Depending on bitmap/sound, export it.
+                        }
+                    }
+                    else if (pFontItem)
+                    {
+                        // Use the font name to check if already exported.
+                        
+                        // Use IFontTableGeneratorService::CreateFontTableForFontItem() to create 
+                        // a font table and then export it.
+                    }
+                }
+            }
+
+            callocService->Free((FCM::PVoid)pLibItemName);
+        }
+        return FCM_SUCCESS;
+    }
+
     /* ----------------------------------------------------- Resource Palette */
 
-    FCM::Result ResourcePalette::AddMovieClip(
+    FCM::Result ResourcePalette::AddSymbol(
         FCM::U_Int32 resourceId, 
         FCM::StringRep16 pName, 
         Exporter::Service::PITimelineBuilder pTimelineBuilder)
@@ -364,27 +672,18 @@ namespace OpenFL
         FCM::Result res;
         ITimelineWriter* pTimelineWriter;
 
+        LOG(("[EndSymbol] ResId: %d\n", resourceId));
+
         m_resourceList.push_back(resourceId);
+
+        if (pName != NULL)
+        {
+            m_resourceNames.push_back(Utils::ToString(pName, GetCallback()));
+        }
 
         TimelineBuilder* pTimeline = static_cast<TimelineBuilder*>(pTimelineBuilder);
 
         res = pTimeline->Build(resourceId, pName, &pTimelineWriter);
-
-        return res;
-    }
-
-    FCM::Result ResourcePalette::AddGraphic(
-        FCM::U_Int32 resourceId, 
-        Exporter::Service::PITimelineBuilder pTimelineBuilder)
-    {
-        FCM::Result res;
-        ITimelineWriter* pTimelineWriter;
-
-        m_resourceList.push_back(resourceId);
-
-        TimelineBuilder* pTimeline = static_cast<TimelineBuilder*>(pTimelineBuilder);
-
-        res = pTimeline->Build(resourceId, NULL, &pTimelineWriter);
 
         return res;
     }
@@ -394,13 +693,32 @@ namespace OpenFL
         FCM::U_Int32 resourceId, 
         DOM::FrameElement::PIShape pShape)
     {
+        FCM::Result res;
+        FCM::Boolean hasFancy;
+        FCM::AutoPtr<DOM::FrameElement::IShape> pNewShape;
+
+        LOG(("[DefineShape] ResId: %d\n", resourceId));
+
         m_resourceList.push_back(resourceId);
         m_pOutputWriter->StartDefineShape();
 
         if (pShape)
         {
             ExportFill(pShape);
-            ExportStroke(pShape);
+
+            res = HasFancyStrokes(pShape, hasFancy);
+            if (hasFancy)
+            {
+                res = ConvertStrokeToFill(pShape, pNewShape.m_Ptr);
+                ASSERT(FCM_SUCCESS_CODE(res));
+
+                ExportFill(pNewShape);
+            }
+            else
+            {
+                
+                ExportStroke(pShape);
+            }
         }
 
         m_pOutputWriter->EndDefineShape(resourceId);
@@ -411,8 +729,40 @@ namespace OpenFL
 
     FCM::Result ResourcePalette::AddSound(FCM::U_Int32 resourceId, DOM::LibraryItem::PIMediaItem pMediaItem)
     {
-        // Sound is not tested yet.
+        FCM::Result res;
+        std::string name;
+        DOM::AutoPtr<DOM::ILibraryItem> pLibItem;
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnknown;
+        FCM::StringRep16 pName;
+
+        LOG(("[DefineSound] ResId: %d\n", resourceId));
+
         m_resourceList.push_back(resourceId);
+
+        // Store the resource name
+        pLibItem = pMediaItem;
+
+        res = pLibItem->GetName(&pName);
+        ASSERT(FCM_SUCCESS_CODE(res));
+        m_resourceNames.push_back(Utils::ToString(pName, GetCallback()));
+
+        res = pMediaItem->GetMediaInfo(pUnknown.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        AutoPtr<DOM::MediaInfo::ISoundInfo> pSoundInfo = pUnknown;
+        ASSERT(pSoundInfo);
+        
+        CreateSoundFileName(pLibItem, name);
+        
+        m_pOutputWriter->DefineSound(resourceId, name, pMediaItem);
+
+        // Free the name
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
+
+        callocService->Free((FCM::PVoid)pName);
+
         return FCM_SUCCESS;
     }
 
@@ -420,14 +770,20 @@ namespace OpenFL
     FCM::Result ResourcePalette::AddBitmap(FCM::U_Int32 resourceId, DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         DOM::AutoPtr<DOM::ILibraryItem> pLibItem;
-        FCM::StringRep16 pName;
+        std::string name;
         FCM::Result res;
+        FCM::StringRep16 pName;
+
+        LOG(("[DefineBitmap] ResId: %d\n", resourceId));
 
         m_resourceList.push_back(resourceId);
 
-        // Get name
         pLibItem = pMediaItem;
-        pLibItem->GetName(&pName);
+
+        // Store the resource name
+        res = pLibItem->GetName(&pName);
+        ASSERT(FCM_SUCCESS_CODE(res));
+        m_resourceNames.push_back(Utils::ToString(pName, GetCallback()));
 
         AutoPtr<FCM::IFCMUnknown> medInfo;
         pMediaItem->GetMediaInfo(medInfo.m_Ptr);
@@ -445,12 +801,15 @@ namespace OpenFL
         res = bitsInfo->GetWidth(width);
         ASSERT(FCM_SUCCESS_CODE(res));
 
+        // Form an image name
+        CreateImageFileName(pLibItem, name);
+
         // Dump the definition of a bitmap
-        res = m_pOutputWriter->DefineBitmap(resourceId, height, width, pName, pMediaItem);
+        res = m_pOutputWriter->DefineBitmap(resourceId, height, width, name, pMediaItem);
 
         // Free the name
         FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
-        GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
         AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
 
         callocService->Free((FCM::PVoid)pName);
@@ -461,10 +820,73 @@ namespace OpenFL
 
     FCM::Result ResourcePalette::AddClassicText(FCM::U_Int32 resourceId, DOM::FrameElement::PIClassicText pClassicText)
     {
-        // Text is not tested yet
+        DOM::AutoPtr<DOM::FrameElement::IClassicText> pTextItem;
+        FCMListPtr pParagraphsList;
+        FCM::StringRep16 textDisplay;
+        FCM::U_Int32 count = 0;
+        FCM::U_Int16 fontSize;
+        std::string fName; 
+        std::string displayText; 
+        DOM::Utils::COLOR fontColor;
+        FCM::Result res;
+     
+        LOG(("[DefineClassicText] ResId: %d\n", resourceId));
+
         m_resourceList.push_back(resourceId);
+
+        pTextItem = pClassicText;
+        AutoPtr<DOM::FrameElement::ITextBehaviour> textBehaviour;
+        pTextItem->GetTextBehaviour(textBehaviour.m_Ptr);
+        AutoPtr<DOM::FrameElement::IDynamicTextBehaviour> dynamicTextBehaviour = textBehaviour.m_Ptr;
+
+        if(dynamicTextBehaviour)
+        {
+            pTextItem->GetParagraphs(pParagraphsList.m_Ptr);
+            res = pParagraphsList->Count(count);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            res = pTextItem->GetText(&textDisplay);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            displayText = Utils::ToString(textDisplay, GetCallback());
+        }
+    
+        for (FCM::U_Int32 pIndex = 0; pIndex < count; pIndex++)
+        {
+            AutoPtr<DOM::FrameElement::IParagraph> pParagraph = pParagraphsList[pIndex];
+
+            if (pParagraph)
+            {
+                FCMListPtr pTextRunList;
+                pParagraph->GetTextRuns(pTextRunList.m_Ptr);
+
+                FCM::U_Int32 trCount;
+                pTextRunList->Count(trCount);
+
+                for (FCM::U_Int32 trIndex = 0; trIndex < trCount; trIndex++)
+                {
+                    AutoPtr<DOM::FrameElement::ITextRun> pTextRun = pTextRunList[trIndex];
+                    AutoPtr<DOM::FrameElement::ITextStyle> trStyle;
+
+                    pTextRun->GetTextStyle(trStyle.m_Ptr);
+                    
+                    res = trStyle->GetFontSize(fontSize);
+                    ASSERT(FCM_SUCCESS_CODE(res));
+
+                    res = trStyle->GetFontColor(fontColor);
+                    ASSERT(FCM_SUCCESS_CODE(res));
+
+                    // Form font info in required format
+                    GetFontInfo(trStyle, fName, fontSize);
+                }
+            }
+        }
+    
+        //Define Text Element
+        res = m_pOutputWriter->DefineText(resourceId, fName, fontColor,displayText,pTextItem);
+
         return FCM_SUCCESS;
     }
+
 
 
     FCM::Result ResourcePalette::HasResource(FCM::U_Int32 resourceId, FCM::Boolean& hasResource)
@@ -480,6 +902,8 @@ namespace OpenFL
                 break;
             }
         }
+
+        //LOG(("[HasResource] ResId: %d HasResource: %d\n", resourceId, hasResource));
 
         return FCM_SUCCESS;
     }
@@ -499,12 +923,32 @@ namespace OpenFL
     void ResourcePalette::Init(IOutputWriter* pOutputWriter)
     {
         m_pOutputWriter = pOutputWriter;
+        m_imageFileNameLabel = 0;
+        m_soundFileNameLabel = 0;
     }
 
     void ResourcePalette::Clear()
     {
         m_resourceList.clear();
     }
+
+    FCM::Result ResourcePalette::HasResource(
+            const std::string& name, 
+            FCM::Boolean& hasResource)
+    {
+        hasResource = false;
+        for (FCM::U_Int32 index = 0; index < m_resourceNames.size(); index++)
+        {
+            if (m_resourceNames[index] == name)
+            {
+                hasResource = true;
+                break;
+            }
+        }
+
+        return FCM_SUCCESS;
+    }
+
 
     FCM::Result ResourcePalette::ExportFill(DOM::FrameElement::PIShape pIShape)
     {
@@ -696,7 +1140,6 @@ namespace OpenFL
         AutoPtr<DOM::FillStyle::IBitmapFillStyle> pBitmapFillStyle = NULL;
 
         AutoPtr<FCM::IFCMUnknown> pGrad;
-
         for (FCM::U_Int32 j = 0; j < strokeStyleCount; j++)
         {
             AutoPtr<DOM::Service::Shape::IStrokeGroup> pStrokeGroup = pStrokeGroupList[j];
@@ -747,6 +1190,81 @@ namespace OpenFL
     }
 
 
+    FCM::Result ResourcePalette::HasFancyStrokes(DOM::FrameElement::PIShape pShape, FCM::Boolean& hasFancy)
+    {
+        FCM::Result res;
+        FCM::FCMListPtr pStrokeGroupList;
+        FCM::U_Int32 strokeStyleCount;
+
+        hasFancy = false;
+
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkSRVReg;
+        GetCallback()->GetService(DOM::FLA_REGION_GENERATOR_SERVICE,pUnkSRVReg.m_Ptr);
+        AutoPtr<DOM::Service::Shape::IRegionGeneratorService> pIRegionGeneratorService(pUnkSRVReg);
+        ASSERT(pIRegionGeneratorService);
+
+        res = pIRegionGeneratorService->GetStrokeGroups(pShape, pStrokeGroupList.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        res = pStrokeGroupList->Count(strokeStyleCount);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        for (FCM::U_Int32 j = 0; j < strokeStyleCount; j++)
+        {
+            
+            AutoPtr<DOM::StrokeStyle::ISolidStrokeStyle> pSolidStrokeStyle;
+            AutoPtr<DOM::Service::Shape::IStrokeGroup> pStrokeGroup = pStrokeGroupList[j];
+            ASSERT(pStrokeGroup);
+
+            AutoPtr<FCM::IFCMUnknown> pStrokeStyle;
+            pStrokeGroup->GetStrokeStyle(pStrokeStyle.m_Ptr);
+
+            pSolidStrokeStyle = pStrokeStyle;
+
+            if (pSolidStrokeStyle)
+            {
+                FCM::AutoPtr<DOM::StrokeStyle::IStrokeWidth> pStrokeWidth;
+
+                pSolidStrokeStyle->GetStrokeWidth(pStrokeWidth.m_Ptr);
+
+                if (pStrokeWidth.m_Ptr)
+                {
+                    // Variable width stroke
+                    hasFancy = true;
+                    break;
+                }            
+            }
+            else
+            {
+                // Not a solid stroke (may be dashed, dotted etc..)
+                hasFancy = true;
+                break;
+            }
+        }
+
+        return FCM_SUCCESS;
+    }
+
+
+    // Convert strokes to fills
+    FCM::Result ResourcePalette::ConvertStrokeToFill(
+        DOM::FrameElement::PIShape pShape,
+        DOM::FrameElement::PIShape& pNewShape)
+    {
+        FCM::Result res;
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkSRVReg; 
+
+        GetCallback()->GetService(DOM::FLA_SHAPE_SERVICE, pUnkSRVReg.m_Ptr);
+
+        AutoPtr<DOM::Service::Shape::IShapeService> pIShapeService(pUnkSRVReg);
+        ASSERT(pIShapeService);
+
+        res = pIShapeService->ConvertStrokeToFill(pShape, pNewShape);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        return FCM_SUCCESS;
+    }
+
     FCM::Result ResourcePalette::ExportStrokeStyle(FCM::PIFCMUnknown pStrokeStyle)
     {
         FCM::Result res = FCM_SUCCESS;
@@ -777,9 +1295,12 @@ namespace OpenFL
         DOM::Utils::ScaleType scaleType;
         FCM::Boolean strokeHinting;
 
+
+        capStyle.structSize = sizeof(DOM::StrokeStyle::CAP_STYLE);
         res = pSolidStrokeStyle->GetCapStyle(capStyle);
         ASSERT(FCM_SUCCESS_CODE(res));
 
+        joinStyle.structSize = sizeof(DOM::StrokeStyle::JOIN_STYLE);
         res = pSolidStrokeStyle->GetJoinStyle(joinStyle);
         ASSERT(FCM_SUCCESS_CODE(res));
 
@@ -933,10 +1454,10 @@ namespace OpenFL
     {
         DOM::AutoPtr<DOM::ILibraryItem> pLibItem;
         DOM::AutoPtr<DOM::LibraryItem::IMediaItem> pMediaItem;
-        FCM::StringRep16 pName;
         FCM::Result res;
         FCM::Boolean isClipped;
         DOM::Utils::MATRIX2D matrix;
+        std::string name;
 
         // IsClipped ?
         res = pBitmapFillStyle->IsClipped(isClipped);
@@ -951,7 +1472,6 @@ namespace OpenFL
         ASSERT(FCM_SUCCESS_CODE(res));
 
         pLibItem = pMediaItem;
-        pLibItem->GetName(&pName);
 
         AutoPtr<FCM::IFCMUnknown> medInfo;
         pMediaItem->GetMediaInfo(medInfo.m_Ptr);
@@ -969,22 +1489,156 @@ namespace OpenFL
         res = bitsInfo->GetWidth(width);
         ASSERT(FCM_SUCCESS_CODE(res));
 
+        // Form an image name
+        CreateImageFileName(pLibItem, name);
+
         // Dump the definition of a bitmap fill style
         res = m_pOutputWriter->DefineBitmapFillStyle(
             isClipped, 
             matrix, 
             height, 
             width, 
-            pName, 
+            name, 
             pMediaItem);
         ASSERT(FCM_SUCCESS_CODE(res));
 
-        // Free the name
+        return res;
+    }
+
+
+    FCM::Result ResourcePalette::CreateImageFileName(DOM::ILibraryItem* pLibItem, std::string& name)
+    {
+        FCM::StringRep16 pLibName;
+        FCM::Result res;
+        std::string str;
+        std::size_t pos;
+        std::string fileLabel;
+
+        res = pLibItem->GetName(&pLibName);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        str = Utils::ToString(pLibName, GetCallback());
+
+        fileLabel = Utils::ToString(m_imageFileNameLabel);
+        name = "Image" + fileLabel;
+        m_imageFileNameLabel++;
+
+        // DOM APIs do not provide a way to get the compression of the image.
+        // For time being, we will use the extension of the library item name.
+        pos = str.rfind(".");
+        if (pos != std::string::npos)
+        {
+            if (str.substr(pos + 1) == "jpg")
+            {
+                name += ".jpg";
+            }
+            else if (str.substr(pos + 1) == "png")
+            {
+                name += ".png";
+            }
+            else
+            {
+                name += ".png";
+            }
+        }
+        else
+        {
+            name += ".png";
+        }
+
+         // Free the name
         FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
-        GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
         AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
 
-        callocService->Free((FCM::PVoid)pName);
+        callocService->Free((FCM::PVoid)pLibName);
+
+        return res;
+    }
+
+    FCM::Result ResourcePalette::CreateSoundFileName(DOM::ILibraryItem* pLibItem, std::string& name)
+    {
+        FCM::StringRep16 pLibName;
+        FCM::Result res;
+        std::string str;
+        std::string fileLabel;
+        std::size_t pos;
+
+        res = pLibItem->GetName(&pLibName);
+        ASSERT(FCM_SUCCESS_CODE(res));
+        
+        str = Utils::ToString(pLibName, GetCallback());
+        fileLabel = Utils::ToString(m_soundFileNameLabel);
+        
+        name = "Sound" + fileLabel;
+        m_soundFileNameLabel++;
+
+
+        // DOM APIs do not provide a way to get the compression of the sound.
+        // For time being, we will use the extension of the library item name.
+        pos = str.rfind(".");
+        if (pos != std::string::npos)
+        {
+            if (str.substr(pos + 1) == "wav")
+            {
+                name += ".WAV";
+            }
+            else if (str.substr(pos + 1) == "mp3")
+            {
+                name += ".MP3";
+            }
+            else
+            {
+                name += ".MP3";
+            }
+        }
+        else
+        {
+            name += ".MP3";
+        }
+        
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
+        callocService->Free((FCM::PVoid)pLibName);
+        return res;
+    }
+
+    FCM::Result ResourcePalette::GetFontInfo(DOM::FrameElement::ITextStyle* pTextStyleItem, std::string& name, FCM::U_Int16 fontSize)
+    {
+        FCM::StringRep16 pFontName;
+        FCM::StringRep8 pFontStyle;
+        FCM::Result res;
+        std::string str;
+        std::string sizeStr;
+        std::string styleStr;
+
+        res = pTextStyleItem->GetFontName(&pFontName);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        res = pTextStyleItem->GetFontStyle(&pFontStyle);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        styleStr = pFontStyle;
+        if(styleStr == "BoldItalicStyle")
+            styleStr = "italic bold";
+        else if(styleStr == "BoldStyle")
+            styleStr = "bold";
+        else if(styleStr == "ItalicStyle")
+            styleStr = "italic";
+        else if(styleStr == "RegularStyle")
+            styleStr = "";
+
+        sizeStr = Utils::ToString(fontSize);
+        str = Utils::ToString(pFontName,GetCallback());
+        name = styleStr+" "+sizeStr + "px" + " " + "'" + str + "'" ;
+
+        // Free the name
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
+        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+        AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
+
+        callocService->Free((FCM::PVoid)pFontName);
 
         return res;
     }
@@ -995,6 +1649,12 @@ namespace OpenFL
     FCM::Result TimelineBuilder::AddShape(FCM::U_Int32 objectId, SHAPE_INFO* pShapeInfo)
     {
         FCM::Result res;
+
+        ASSERT(pShapeInfo);
+        ASSERT(pShapeInfo->structSize == sizeof(SHAPE_INFO));
+
+        LOG(("[AddShape] ObjId: %d ResId: %d PlaceAfter: %d\n", 
+            objectId, pShapeInfo->resourceId, pShapeInfo->placeAfterObjectId));
 
         res = m_pTimelineWriter->PlaceObject(
             pShapeInfo->resourceId, 
@@ -1009,6 +1669,12 @@ namespace OpenFL
     {
         FCM::Result res;
 
+        ASSERT(pClassicTextInfo);
+        ASSERT(pClassicTextInfo->structSize == sizeof(CLASSIC_TEXT_INFO));
+
+        LOG(("[AddClassicText] ObjId: %d ResId: %d PlaceAfter: %d\n", 
+            objectId, pClassicTextInfo->resourceId, pClassicTextInfo->placeAfterObjectId));
+
         res = m_pTimelineWriter->PlaceObject(
             pClassicTextInfo->resourceId, 
             objectId, 
@@ -1021,6 +1687,12 @@ namespace OpenFL
     FCM::Result TimelineBuilder::AddBitmap(FCM::U_Int32 objectId, BITMAP_INFO* pBitmapInfo)
     {
         FCM::Result res;
+
+        ASSERT(pBitmapInfo);
+        ASSERT(pBitmapInfo->structSize == sizeof(BITMAP_INFO));
+
+        LOG(("[AddBitmap] ObjId: %d ResId: %d PlaceAfter: %d\n", 
+            objectId, pBitmapInfo->resourceId, pBitmapInfo->placeAfterObjectId));
 
         res = m_pTimelineWriter->PlaceObject(
             pBitmapInfo->resourceId, 
@@ -1036,6 +1708,12 @@ namespace OpenFL
         FCM::Result res;
         FCM::AutoPtr<FCM::IFCMUnknown> pUnknown = pMovieClip;
 
+        ASSERT(pMovieClipInfo);
+        ASSERT(pMovieClipInfo->structSize == sizeof(MOVIE_CLIP_INFO));
+      
+        LOG(("[AddMovieClip] ObjId: %d ResId: %d PlaceAfter: %d\n", 
+            objectId, pMovieClipInfo->resourceId, pMovieClipInfo->placeAfterObjectId));
+
         res = m_pTimelineWriter->PlaceObject(
             pMovieClipInfo->resourceId, 
             objectId, 
@@ -1049,6 +1727,12 @@ namespace OpenFL
     FCM::Result TimelineBuilder::AddGraphic(FCM::U_Int32 objectId, GRAPHIC_INFO* pGraphicInfo)
     {
         FCM::Result res;
+
+        ASSERT(pGraphicInfo);
+        ASSERT(pGraphicInfo->structSize == sizeof(GRAPHIC_INFO));
+
+        LOG(("[AddGraphic] ObjId: %d ResId: %d PlaceAfter: %d\n", 
+            objectId, pGraphicInfo->resourceId, pGraphicInfo->placeAfterObjectId));
 
         res = m_pTimelineWriter->PlaceObject(
             pGraphicInfo->resourceId, 
@@ -1067,11 +1751,15 @@ namespace OpenFL
         FCM::AutoPtr<FCM::IFCMUnknown> pUnknown = pSound;
         FCM::Result res;
 
+        ASSERT(pSoundInfo);
+        ASSERT(pSoundInfo->structSize == sizeof(SOUND_INFO));
+
+        LOG(("[AddSound] ObjId: %d ResId: %d\n", 
+            objectId, pSoundInfo->resourceId));
+
         res = m_pTimelineWriter->PlaceObject(
             pSoundInfo->resourceId, 
             objectId, 
-            pSoundInfo->placeAfterObjectId, 
-            NULL, 
             pUnknown);
 
         return res;
@@ -1079,7 +1767,10 @@ namespace OpenFL
 
     FCM::Result TimelineBuilder::UpdateZOrder(FCM::U_Int32 objectId, FCM::U_Int32 placeAfterObjectId)
     {
-        FCM::Result res;
+        FCM::Result res = FCM_SUCCESS;
+
+        LOG(("[UpdateZOrder] ObjId: %d PlaceAfter: %d\n", 
+            objectId, placeAfterObjectId));
 
         res = m_pTimelineWriter->UpdateZOrder(objectId, placeAfterObjectId);
 
@@ -1090,6 +1781,8 @@ namespace OpenFL
     {
         FCM::Result res;
 
+        LOG(("[Remove] ObjId: %d\n", objectId));
+
         res = m_pTimelineWriter->RemoveObject(objectId);
 
         return res;
@@ -1098,6 +1791,8 @@ namespace OpenFL
     FCM::Result TimelineBuilder::UpdateBlendMode(FCM::U_Int32 objectId, DOM::FrameElement::BlendMode blendMode)
     {
         FCM::Result res;
+
+        LOG(("[UpdateBlendMode] ObjId: %d BlendMode: %d\n", objectId, blendMode));
 
         res = m_pTimelineWriter->UpdateBlendMode(objectId, blendMode);
 
@@ -1108,29 +1803,45 @@ namespace OpenFL
     {
         FCM::Result res;
 
+        LOG(("[UpdateVisibility] ObjId: %d Visible: %d\n", objectId, visible));
+
         res = m_pTimelineWriter->UpdateVisibility(objectId, visible);
 
         return res;
     }
 
 
-    FCM::Result TimelineBuilder::UpdateGraphicFilter(FCM::U_Int32 objectId, PIFCMList& pFilterable)
+    FCM::Result TimelineBuilder::UpdateGraphicFilter(FCM::U_Int32 objectId, PIFCMList pFilterable)
     {
         FCM::U_Int32 count;
         FCM::Result res;
+        FCM::FCMListPtr pFilterList;
+
+        LOG(("[UpdateGraphicFilter] ObjId: %d\n", objectId));
 
         res = pFilterable->Count(count);
-        if (FCM_FAILURE_CODE(res))
-        {
-            return res;
-        }
+        ASSERT(FCM_SUCCESS_CODE(res));
         
+        for (FCM::U_Int32 i = 0; i < count; i++)
+        {
+            FCM::AutoPtr<FCM::IFCMUnknown> pUnknown = (*pFilterable)[i];
+            res = m_pTimelineWriter->AddGraphicFilter(objectId, pUnknown.m_Ptr);
+
+            if (FCM_FAILURE_CODE(res))
+            {
+                return res;
+            }
+        }
+
         return FCM_SUCCESS;
     }
+
 
     FCM::Result TimelineBuilder::UpdateDisplayTransform(FCM::U_Int32 objectId, const DOM::Utils::MATRIX2D& matrix)
     {
         FCM::Result res;
+
+        LOG(("[UpdateDisplayTransform] ObjId: %d\n", objectId));
 
         res = m_pTimelineWriter->UpdateDisplayTransform(objectId, matrix);
 
@@ -1141,6 +1852,8 @@ namespace OpenFL
     {
         FCM::Result res;
 
+        LOG(("[UpdateColorTransform] ObjId: %d\n", objectId));
+
         res = m_pTimelineWriter->UpdateColorTransform(objectId, colorMatrix);
 
         return res;
@@ -1150,6 +1863,8 @@ namespace OpenFL
     {
         FCM::Result res;
 
+        LOG(("[ShowFrame] Frame: %d\n", m_frameIndex));
+
         res = m_pTimelineWriter->ShowFrame(m_frameIndex);
 
         m_frameIndex++;
@@ -1157,13 +1872,40 @@ namespace OpenFL
         return res;
     }
 
-    FCM::Result TimelineBuilder::AddFrameScript(FCM::StringRep16* ppScript)
+    FCM::Result TimelineBuilder::AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum)
     {
         FCM::Result res = FCM_SUCCESS;
 
-        if (ppScript != NULL)
+        LOG(("[AddFrameScript] LayerNum: %d\n", layerNum));
+
+        if (pScript != NULL)
         {
-            res = m_pTimelineWriter->AddFrameScript(*ppScript);
+            res = m_pTimelineWriter->AddFrameScript(pScript, layerNum);
+        }
+
+        return res;
+    }
+
+    FCM::Result TimelineBuilder::RemoveFrameScript(FCM::U_Int32 layerNum)
+    {
+        FCM::Result res = FCM_SUCCESS;
+
+        LOG(("[RemoveFrameScript] LayerNum: %d\n", layerNum));
+
+        res = m_pTimelineWriter->RemoveFrameScript(layerNum);
+
+        return res;
+    }
+
+    FCM::Result TimelineBuilder::SetFrameLabel(FCM::StringRep16 pLabel, DOM::KeyFrameLabelType labelType)
+    {
+        FCM::Result res = FCM_SUCCESS;
+
+        LOG(("[SetFrameLabel]\n"));
+
+        if (pLabel != NULL)
+        {
+            res = m_pTimelineWriter->SetFrameLabel(pLabel, labelType);
         }
 
         return res;
@@ -1188,6 +1930,7 @@ namespace OpenFL
         m_pOutputWriter(NULL),
         m_frameIndex(0)
     {
+        //LOG(("[CreateTimeline]\n"));
     }
 
     TimelineBuilder::~TimelineBuilder()
@@ -1200,7 +1943,7 @@ namespace OpenFL
 
         m_pOutputWriter->StartDefineTimeline();
 
-        m_pTimelineWriter = new JSONTimelineWriter();
+        m_pTimelineWriter = new JSONTimelineWriter(GetCallback());
         ASSERT(m_pTimelineWriter);
     }
 
@@ -1238,9 +1981,9 @@ namespace OpenFL
          * Dictionary structure for a Publisher plugin is as follows:
          *
          *  Level 0 :    
-         *              -----------------------
-         *             | Flash.Plugin |  ----- | --------------------------------
-         *              -----------------------                                  |
+         *              --------------------------
+         *             | Flash.Component |  ----- | -----------------------------
+         *              --------------------------                               |
          *                                                                       |
          *  Level 1:                                   <-------------------------                          
          *              ------------------------------  
@@ -1249,25 +1992,21 @@ namespace OpenFL
          *                                                                       |
          *  Level 2:                                      <---------------------- 
          *              -----------------------------------
-         *             | Flash.Category.Publisher |  ----- |---------------------
+         *             | Flash.Component.Category.Publisher |  ----- |-----------
          *              -----------------------------------                      |
          *                                                                       |
          *  Level 3:                                                           <-
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.Name                  | "SamplePlugin"     |
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.UI                    | "com.example..."   |
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.TargetFormatName      | "xyz"              |
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.TargetFormatExtension | "abc"              |
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.CanExportImage        | "true"             |
-         *              ---------------------------------------------------------
-         *             | Flash.Plugin.TargetDocs            |           ---------|-
-         *              ---------------------------------------------------------  |
-         *                                                                         |
-         *  Level 4:                                                    <----------
+         *              -----------------------------------------------------------
+         *             | Flash.Component.Category.Name           | "SamplePlugin"  |
+         *              -----------------------------------------------------------
+         *             | Flash.Component.Category.UniversalName  | "com.example..."|
+         *              -----------------------------------------------------------
+         *             | Flash.Component.Publisher.UI            | "com.example..."|
+         *              -----------------------------------------------------------
+         *             | Flash.Component.Publisher.TargetDocs    |        ---------|--
+         *              -----------------------------------------------------------   |
+         *                                                                            |
+         *  Level 4:                                                    <-------------
          *              -----------------------------------------------
          *             | CLSID_DocType   |  Empty String               |
          *              -----------------------------------------------
@@ -1292,47 +2031,30 @@ namespace OpenFL
 
                 {
                     // Level 3 Dictionary
-                    std::string str_name = "OpenFLExtension";
+
+                    // Add short name
+                    std::string str_name = "SamplePlugin";
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_Name,
-                        kFCMDictType_CString, 
+                        kFCMDictType_StringRep8, 
                         (FCM::PVoid)str_name.c_str(),
                         (FCM::U_Int32)str_name.length() + 1);
 
-                    std::string str_uniname = "OpenFLExtension";
+                    // Add universal name - Used to refer to it from JSFL. Also, used in 
+                    // error/warning messages.
+                    std::string str_uniname = "com.example.SamplePluginPublisher";
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_UniversalName,
-                        kFCMDictType_CString,
+                        kFCMDictType_StringRep8,
                         (FCM::PVoid)str_uniname.c_str(),
                         (FCM::U_Int32)str_uniname.length() + 1);
 
-                    std::string str_ui = "org.openfl.OpenFLExtension.PublishSettings";
+                    std::string str_ui = "com.example.SamplePlugin.PublishSettings";
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashPublisherKey_UI, 
-                        kFCMDictType_CString, 
+                        kFCMDictType_StringRep8, 
                         (FCM::PVoid)str_ui.c_str(),
                         (FCM::U_Int32)str_ui.length() + 1);
-
-                    std::string format = "xyz";
-                    res = pCategory->Add(
-                        (const FCM::StringRep8)kFlashPublisherKey_TargetFormatName, 
-                        kFCMDictType_CString, 
-                        (FCM::PVoid)format.c_str(),
-                        (FCM::U_Int32)format.length() + 1);
-
-                    std::string exten = "abc";
-                    res = pCategory->Add(
-                        (const FCM::StringRep8)kFlashPublisherKey_TargetFormatExtn, 
-                        kFCMDictType_CString, 
-                        (FCM::PVoid)exten.c_str(),
-                        (FCM::U_Int32)exten.length() + 1);
-
-                    FCM::Boolean canExport = true;
-                    res = pCategory->Add(
-                        (const FCM::StringRep8)kFlashPublisherKey_CanExportImage,
-                        kFCMDictType_Bool, 
-                        (FCM::PVoid)&canExport,
-                        sizeof(FCM::Boolean));
 
                     AutoPtr<IFCMDictionary> pDocs;
                     res = pCategory->AddLevel((const FCM::StringRep8)kFlashPublisherKey_TargetDocs, pDocs.m_Ptr);
@@ -1342,7 +2064,7 @@ namespace OpenFL
                         std::string empytString = "";   
                         res = pDocs->Add(
                             (const FCM::StringRep8)Utils::ToString(docId).c_str(), 
-                            kFCMDictType_CString, 
+                            kFCMDictType_StringRep8, 
                             (FCM::PVoid)empytString.c_str(),
                             (FCM::U_Int32)empytString.length() + 1);
                     }
@@ -1352,5 +2074,4 @@ namespace OpenFL
 
         return res;
     }
-
 };

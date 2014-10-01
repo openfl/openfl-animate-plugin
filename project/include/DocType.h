@@ -28,6 +28,7 @@
 
 #include <map>
 
+#include "Version.h"
 #include "FCMTypes.h"
 #include "FCMPluginInterface.h"
 #include "FlashFCMPublicIDs.h"
@@ -84,7 +85,7 @@ namespace OpenFL
 {
 	class CDocType : public DocType::IDocType, public FCM::FCMObjectBase
     {
-        BEGIN_INTERFACE_MAP(CDocType, FCM_PLUGIN_VERSION)
+        BEGIN_INTERFACE_MAP(CDocType, SAMPLE_PLUGIN_VERSION)
             INTERFACE_ENTRY(IDocType)    
         END_INTERFACE_MAP
             
@@ -104,7 +105,7 @@ namespace OpenFL
     
     class FeatureMatrix : public DocType::IFeatureMatrix, public FCM::FCMObjectBase
     {
-        BEGIN_MULTI_INTERFACE_MAP(FeatureMatrix, FCM_PLUGIN_VERSION)
+        BEGIN_MULTI_INTERFACE_MAP(FeatureMatrix, SAMPLE_PLUGIN_VERSION)
             INTERFACE_ENTRY(IFeatureMatrix)
         END_INTERFACE_MAP
 
@@ -225,7 +226,7 @@ namespace OpenFL
         StrPropertyMap mProperties;
     };
 
-    FCM::Result RegisterDocType(FCM::PIFCMDictionary pPlugins);
+    FCM::Result RegisterDocType(FCM::PIFCMDictionary pPlugins, const std::string& resPath);
 };
 
 

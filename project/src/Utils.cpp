@@ -24,6 +24,7 @@
 
 #ifdef __APPLE__
 #include "CoreFoundation/CoreFoundation.h"
+#include <dlfcn.h>
 #endif
 
 #include <iomanip>
@@ -35,9 +36,15 @@
 #include <string>
 #include <cstring>
 #include <stdlib.h>
-
+#include "Application/Service/IOutputConsoleService.h"
+#include "Application/Service/IFlashApplicationService.h"
+#include "FlashFCMPublicIDs.h"
 
 /* -------------------------------------------------- Constants */
+
+#ifdef _WINDOWS
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#endif
 
 namespace OpenFL
 {
@@ -78,6 +85,47 @@ namespace OpenFL
     }
     
 
+    void Utils::GetLanguageCode(FCM::PIFCMCallback pCallback, std::string& langCode)
+    {
+        FCM::StringRep8 pLanguageCode;
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        FCM::AutoPtr<Application::Service::IFlashApplicationService> pAppService;
+        FCM::Result res;
+        
+        res = pCallback->GetService(Application::Service::FLASHAPP_SERVICE, pUnk.m_Ptr);
+        pAppService = pUnk;
+
+        if (pAppService)
+        {
+            res = pAppService->GetLanguageCode(&pLanguageCode);
+            if (FCM_SUCCESS_CODE(res))
+            {
+                langCode = ToString(pLanguageCode);
+
+                FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = GetCallocService(pCallback);
+                pCalloc->Free(pLanguageCode);
+            }
+        }
+    }
+
+    void Utils::GetAppVersion(FCM::PIFCMCallback pCallback, FCM::U_Int32& version)
+    {
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        FCM::AutoPtr<Application::Service::IFlashApplicationService> pAppService;
+        FCM::Result res;
+        
+        version = 0;
+
+        res = pCallback->GetService(Application::Service::FLASHAPP_SERVICE, pUnk.m_Ptr);
+        pAppService = pUnk;
+
+        if (pAppService)
+        {
+            res = pAppService->GetVersion(version);
+            ASSERT(FCM_SUCCESS_CODE(res))
+        }
+    }
+
     std::string Utils::ToString(const FCM::FCMGUID& in)
     {
         std::ostringstream result;
@@ -114,16 +162,22 @@ namespace OpenFL
     
     std::string Utils::ToString(FCM::CStringRep16 pStr16, FCM::PIFCMCallback pCallback)
     {
-        FCM::StringRep8 pStrFeatureName = NULL;
+        FCM::StringRep8 pStr8 = NULL;
         FCM::AutoPtr<FCM::IFCMStringUtils> pStrUtils = GetStringUtilsService(pCallback);
-        pStrUtils->ConvertStringRep16to8(pStr16, pStrFeatureName);
+        pStrUtils->ConvertStringRep16to8(pStr16, pStr8);
         
-        std::string featureLC = (const char*)pStrFeatureName;
+        std::string string = (const char*)pStr8;
         
         FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = GetCallocService(pCallback);
-        pCalloc->Free(pStrFeatureName);
+        pCalloc->Free(pStr8);
         
-        return featureLC;
+        return string;
+    }
+
+    std::string Utils::ToString(FCM::CStringRep8 pStr8)
+    {
+        std::string string = (const char*)pStr8;
+        return string;
     }
     
     std::string Utils::ToString(const double& in)
@@ -292,6 +346,11 @@ namespace OpenFL
     void Utils::GetParent(const std::string& path, std::string& parent)
     {
         size_t index = path.find_last_of("/\\");
+        if((index+1) == path.length())
+        {
+            parent = path.substr(0, index);
+            index = parent.find_last_of("/\\");
+        }
         parent = path.substr(0, index + 1);
     }
 
@@ -299,6 +358,28 @@ namespace OpenFL
     {
         size_t index = path.find_last_of("/\\");
         fileName = path.substr(index + 1, path.length() - index - 1);
+    }
+
+    void Utils::GetFileNameWithoutExtension(const std::string& path, std::string& fileName)
+    {
+        GetFileName(path, fileName);
+
+        // Remove the extension (if any)
+        size_t index = fileName.find_last_of(".");
+        if (index != std::string::npos)
+        {
+            fileName = fileName.substr(0, index);
+        }
+    }
+
+    void Utils::GetFileExtension(const std::string& path, std::string& extension)
+    {
+        size_t index = path.find_last_of(".");
+        extension = "";
+        if (index != std::string::npos)
+        {
+            extension = path.substr(index + 1, path.length());
+        }
     }
 
     void Utils::GetModuleFilePath(std::string& path, FCM::PIFCMCallback pCallback)
@@ -310,31 +391,66 @@ namespace OpenFL
 
         ASSERT(pFilePath);
 
-        ::GetModuleFileName(NULL, pFilePath, MAX_PATH);
-
+        ::GetModuleFileName((HINSTANCE)&__ImageBase, (LPSTR)pFilePath, MAX_PATH);
+        
         fullPath = Utils::ToString(pFilePath, pCallback);
 
         GetParent(fullPath, path);
 
         delete[] pFilePath;
+        
 #else
-
-        // ----------------------------------------------------------------------------
-        // This makes relative paths work in C++ in Xcode by changing directory to the Resources folder inside the .app bundle
-#ifdef __APPLE__
-        CFBundleRef mainBundle = CFBundleGetMainBundle();
-        CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
-        char tempPath[PATH_MAX];
-        if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)tempPath, PATH_MAX))
-        {
-            // error!
+        Dl_info info;
+        if (dladdr((void*)(GetModuleFilePath), &info)) {
+            std::string fullPath(info.dli_fname);
+            GetParent(fullPath, path);
+            GetParent(path, fullPath);
+            GetParent(fullPath, path);
+            GetParent(path, fullPath);
+            path = fullPath;
         }
-        CFRelease(resourcesURL);
-        std::string fullPath(tempPath);
-        GetParent(fullPath, path);
+        else{
+            ASSERT(0);
+        }
 #endif
-       // ASSERT(0);
-#endif
+    }
+    
+    void Utils::Trace(FCM::PIFCMCallback pCallback, const char* fmt, ...)
+    {
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        FCM::AutoPtr<Application::Service::IOutputConsoleService> outputConsoleService;
+        FCM::Result tempRes = pCallback->GetService(Application::Service::FLASHAPP_OUTPUT_CONSOLE_SERVICE, pUnk.m_Ptr);
+        outputConsoleService = pUnk;
+        pUnk.Reset();
+
+        if (outputConsoleService)
+        {
+            va_list args;
+            char buffer[1024];
+
+            va_start(args, fmt);
+            vsnprintf(buffer, 1024, fmt, args);
+            va_end(args);
+
+            FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = OpenFL::Utils::GetCallocService(pCallback);
+            ASSERT(pCalloc.m_Ptr != NULL);
+
+            FCM::StringRep16 outputString = Utils::ToString16(std::string(buffer), pCallback);
+            outputConsoleService->Trace(outputString);
+            pCalloc->Free(outputString);
+        }
+    }
+
+    void Utils::Log(const char* fmt, ...)
+    {
+        va_list args;
+        char buffer[1024];
+
+        va_start(args, fmt);
+        vsnprintf(buffer, 1024, fmt, args);
+        va_end(args);
+
+        //printf(buffer);
     }
 }
 

@@ -30,10 +30,11 @@
 #include "FCMTypes.h"
 #include "Utils/DOMTypes.h"
 #include "LIbraryItem/IMediaItem.h"
+#include "FrameElement/IClassicText.h"
 #include "FrameElement/IMovieClip.h"
 #include "StrokeStyle/ISolidStrokeStyle.h"
 #include "FillStyle/IGradientFillStyle.h"
-
+#include "IFrame.h"
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -69,7 +70,8 @@ namespace OpenFL
         virtual FCM::Result StartDocument(
             const DOM::Utils::COLOR& background, 
             FCM::U_Int32 stageHeight, 
-            FCM::U_Int32 stageWidth) = 0;
+            FCM::U_Int32 stageWidth,
+            FCM::U_Int32 fps) = 0;
 
         // Marks the end of the Document
         virtual FCM::Result EndDocument() = 0;
@@ -98,7 +100,7 @@ namespace OpenFL
             const DOM::Utils::MATRIX2D& matrix,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            FCM::StringRep16 pName,
+            std::string& name,
             DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
 
         // Start Linear Gradient fill style definition
@@ -171,7 +173,21 @@ namespace OpenFL
             FCM::U_Int32 resId,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            FCM::StringRep16 pName,
+            const std::string&  name,
+            DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
+
+		// Define a classic text
+		virtual FCM::Result DefineText(
+			FCM::U_Int32 resId, 
+			const std::string& name, 
+			const DOM::Utils::COLOR& color, 
+			const std::string& displayText, 
+			DOM::FrameElement::PIClassicText pTextItem) = 0;
+
+        // Define Sound
+        virtual FCM::Result DefineSound(
+            FCM::U_Int32 resId, 
+			const std::string& name, 
             DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
     };
 
@@ -185,6 +201,11 @@ namespace OpenFL
             FCM::U_Int32 objectId,
             FCM::U_Int32 placeAfterObjectId,
             const DOM::Utils::MATRIX2D* pMatrix,
+            FCM::PIFCMUnknown pUnknown = NULL) = 0;
+
+        virtual FCM::Result PlaceObject(
+            FCM::U_Int32 resId,
+            FCM::U_Int32 objectId,
             FCM::PIFCMUnknown pUnknown = NULL) = 0;
 
         virtual FCM::Result RemoveObject(
@@ -216,7 +237,11 @@ namespace OpenFL
 
         virtual FCM::Result ShowFrame(FCM::U_Int32 frameNum) = 0;
 
-        virtual FCM::Result AddFrameScript(FCM::StringRep16 pFrameScript) = 0;
+        virtual FCM::Result AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum) = 0;
+
+        virtual FCM::Result RemoveFrameScript(FCM::U_Int32 layerNum) = 0;
+
+        virtual FCM::Result SetFrameLabel(FCM::StringRep16 pLabel, DOM::KeyFrameLabelType labelType) = 0;
     };
 };
 

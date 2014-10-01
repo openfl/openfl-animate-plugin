@@ -52,8 +52,7 @@ namespace OpenFL
 /* -------------------------------------------------- Macros / Constants */
 
 #define IMAGE_FOLDER "images"
-
-#define JSON_OUTPUT_FILE_NAME "sample.json"
+#define SOUND_FOLDER "sounds"
 
 
 /* -------------------------------------------------- Structs / Unions */
@@ -99,7 +98,8 @@ namespace OpenFL
         virtual FCM::Result StartDocument(
             const DOM::Utils::COLOR& background,
             FCM::U_Int32 stageHeight, 
-            FCM::U_Int32 stageWidth);
+            FCM::U_Int32 stageWidth,
+            FCM::U_Int32 fps);
 
         // Marks the end of the Document
         virtual FCM::Result EndDocument();
@@ -128,7 +128,7 @@ namespace OpenFL
             const DOM::Utils::MATRIX2D& matrix,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            FCM::StringRep16 pName,
+            std::string& name,
             DOM::LibraryItem::PIMediaItem pMediaItem);
 
         // Start Linear Gradient fill style definition
@@ -201,9 +201,21 @@ namespace OpenFL
             FCM::U_Int32 resId,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            FCM::StringRep16 pName,
+            const std::string& name,
             DOM::LibraryItem::PIMediaItem pMediaItem);
 
+		// Define text
+		virtual FCM::Result DefineText(
+			FCM::U_Int32 resId, 
+			const std::string& name, 
+			const DOM::Utils::COLOR& color,
+			const std::string& displayText, 
+			DOM::FrameElement::PIClassicText pTextItem);
+
+        virtual FCM::Result DefineSound(
+            FCM::U_Int32 resId, 
+			const std::string& name, 
+            DOM::LibraryItem::PIMediaItem pMediaItem);
         JSONOutputWriter(FCM::PIFCMCallback pCallback);
 
         virtual ~JSONOutputWriter();
@@ -223,6 +235,9 @@ namespace OpenFL
         JSONNode* m_pTimelineArray;
 
         JSONNode* m_pBitmapArray;
+        JSONNode* m_pSoundArray;
+
+		JSONNode* m_pTextArray;
 
         JSONNode*   m_shapeElem;
 
@@ -242,10 +257,13 @@ namespace OpenFL
 
         std::string m_outputHTMLFile;
 
-        std::string m_outputJSONFile;
+        std::string m_outputJSONFilePath;
+
+        std::string m_outputJSONFileName;
 
         std::string m_outputImageFolder;
 
+        std::string m_outputSoundFolder;
         char* m_HTMLOutput;
 
         FCM::PIFCMCallback m_pCallback;
@@ -261,6 +279,10 @@ namespace OpenFL
             FCM::U_Int32 objectId,
             FCM::U_Int32 placeAfterObjectId,
             const DOM::Utils::MATRIX2D* pMatrix,
+            FCM::PIFCMUnknown pUnknown = NULL);
+        virtual FCM::Result PlaceObject(
+            FCM::U_Int32 resId,
+            FCM::U_Int32 objectId,
             FCM::PIFCMUnknown pUnknown = NULL);
 
         virtual FCM::Result RemoveObject(
@@ -292,9 +314,13 @@ namespace OpenFL
 
         virtual FCM::Result ShowFrame(FCM::U_Int32 frameNum);
 
-        virtual FCM::Result AddFrameScript(FCM::StringRep16 pFrameScript);
+        virtual FCM::Result AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum);
 
-        JSONTimelineWriter();
+        virtual FCM::Result RemoveFrameScript(FCM::U_Int32 layerNum);
+
+        virtual FCM::Result SetFrameLabel(FCM::StringRep16 pLabel, DOM::KeyFrameLabelType labelType);
+
+        JSONTimelineWriter(FCM::PIFCMCallback pCallback);
 
         virtual ~JSONTimelineWriter();
 
@@ -309,6 +335,10 @@ namespace OpenFL
         JSONNode* m_pFrameArray;
 
         JSONNode* m_pTimelineElement;
+
+        JSONNode* m_pFrameElement;
+
+        FCM::PIFCMCallback m_pCallback;
     };
 };
 

@@ -24,7 +24,19 @@
 #include "FCMPluginInterface.h"
 #include "libjson.h"
 #include "Utils.h"
+#include "FrameElement/ISound.h"
 #include "Service/Image/IBitmapExportService.h"
+#include "Service/TextLayout/ITextLinesGeneratorService.h"
+#include "Service/TextLayout/ITextLine.h"
+#include "Service/Sound/ISoundExportService.h"
+#include "GraphicFilter/IDropShadowFilter.h"
+#include "GraphicFilter/IAdjustColorFilter.h"
+#include "GraphicFilter/IBevelFilter.h"
+#include "GraphicFilter/IBlurFilter.h"
+#include "GraphicFilter/IGlowFilter.h"
+#include "GraphicFilter/IGradientBevelFilter.h"
+#include "GraphicFilter/IGradientGlowFilter.h"
+#include "Utils/ILinearColorGradient.h"
 
 namespace OpenFL
 {
@@ -66,7 +78,7 @@ namespace OpenFL
                     var canvas = document.getElementById(\"canvas\"); \r\n\
                     var stage = new createjs.Stage(canvas);         \r\n\
                     //pass FPS and use that in the player \r\n\
-                    init(stage);             \r\n\
+                    init(stage, \"%s\", %d);             \r\n\
                 }); \r\n\
                 } \r\n\
             </script> \r\n\
@@ -85,12 +97,15 @@ namespace OpenFL
     FCM::Result JSONOutputWriter::StartOutput(std::string& outputFileName)
     {
         std::string parent;
+        std::string jsonFile;
 
         Utils::GetParent(outputFileName, parent);
-
+        Utils::GetFileNameWithoutExtension(outputFileName, jsonFile);
         m_outputHTMLFile = outputFileName;
-        m_outputJSONFile = parent + JSON_OUTPUT_FILE_NAME;
+        m_outputJSONFileName = jsonFile + ".json";
+        m_outputJSONFilePath = parent + jsonFile + ".json";
         m_outputImageFolder = parent + IMAGE_FOLDER;
+        m_outputSoundFolder = parent + SOUND_FOLDER;
 
         return FCM_SUCCESS;
     }
@@ -106,18 +121,19 @@ namespace OpenFL
     FCM::Result JSONOutputWriter::StartDocument(
         const DOM::Utils::COLOR& background,
         FCM::U_Int32 stageHeight, 
-        FCM::U_Int32 stageWidth)
+        FCM::U_Int32 stageWidth,
+        FCM::U_Int32 fps)
     {
         FCM::U_Int32 backColor;
 
-        m_HTMLOutput = new char[strlen(htmlOutput) + 50];
+        m_HTMLOutput = new char[strlen(htmlOutput) + FILENAME_MAX + 50];
         if (m_HTMLOutput == NULL)
         {
             return FCM_MEM_NOT_AVAILABLE;
         }
 
         backColor = (background.red << 16) | (background.green << 8) | (background.blue);
-        sprintf(m_HTMLOutput, htmlOutput, stageWidth, stageHeight, backColor);
+        sprintf(m_HTMLOutput, htmlOutput, m_outputJSONFileName.c_str(), fps, stageWidth, stageHeight, backColor);
 
         return FCM_SUCCESS;
     }
@@ -129,14 +145,17 @@ namespace OpenFL
 
         m_pRootNode->push_back(*m_pShapeArray);
         m_pRootNode->push_back(*m_pBitmapArray);
+        m_pRootNode->push_back(*m_pSoundArray);
+		m_pRootNode->push_back(*m_pTextArray);
         m_pRootNode->push_back(*m_pTimelineArray);
+		
 
         // Write the json file
-        remove(m_outputJSONFile.c_str());
+        remove(m_outputJSONFilePath.c_str());
 
         JSONNode firstNode(JSON_NODE);
         firstNode.push_back(*m_pRootNode);
-        file.open(m_outputJSONFile.c_str());
+        file.open(m_outputJSONFilePath.c_str());
         file << firstNode.write_formatted();
         file.close();
 
@@ -233,7 +252,7 @@ namespace OpenFL
         const DOM::Utils::MATRIX2D& matrix,
         FCM::S_Int32 height, 
         FCM::S_Int32 width,
-        FCM::StringRep16 pName,
+        std::string& name,
         DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
@@ -246,46 +265,39 @@ namespace OpenFL
         bitmapElem.push_back(JSONNode(("height"), OpenFL::Utils::ToString(height)));
         bitmapElem.push_back(JSONNode(("width"), OpenFL::Utils::ToString(width)));
 
-        // Form the image path
-        bitmapName = Utils::ToString(pName, m_pCallback);
-        std::size_t pos = bitmapName.find(".");
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        std::string bitmapRelPath;
+        std::string bitmapExportPath = m_outputImageFolder + "/";
+            
+        bitmapExportPath += name;
+            
+        bitmapRelPath = "./";
+        bitmapRelPath += IMAGE_FOLDER;
+        bitmapRelPath += "/";
+        bitmapRelPath += name;
 
-        if (pos != std::string::npos)
+        res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+
+        res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        FCM::AutoPtr<DOM::Service::Image::IBitmapExportService> bitmapExportService = pUnk;
+        if (bitmapExportService)
         {
-            FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
-            std::string bitmapRelPath;
-            std::string bitmapExportPath = m_outputImageFolder + "/";
-            
-            if ((bitmapName.substr(pos + 1) != "jpg") ||
-                (bitmapName.substr(pos + 1) != "png"))
-            {
-                std::string bitmapNameWithoutExt;
-
-                bitmapNameWithoutExt = bitmapName.substr(0, pos);
-                bitmapName = bitmapNameWithoutExt + ".png";
-            }
-            
-            bitmapRelPath = "./";
-            bitmapRelPath += IMAGE_FOLDER;
-            bitmapRelPath += "/" + bitmapName;
-
-            res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
+            FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
+            FCM::StringRep16 pFilePath = Utils::ToString16(bitmapExportPath, m_pCallback);
+            res = bitmapExportService->ExportToFile(pMediaItem, pFilePath, 100);
             ASSERT(FCM_SUCCESS_CODE(res));
 
-            FCM::AutoPtr<DOM::Service::Image::IBitmapExportService> bitmapExportService = pUnk;
-            if (bitmapExportService)
-            {
-                res = bitmapExportService->ExportToFile(pMediaItem, Utils::ToString16(bitmapExportPath, m_pCallback), 100);
-                ASSERT(FCM_SUCCESS_CODE(res));
-            }
+            pCalloc = OpenFL::Utils::GetCallocService(m_pCallback);
+            ASSERT(pCalloc.m_Ptr != NULL);
 
-            bitmapElem.push_back(JSONNode(("bitmapPath"), bitmapRelPath)); 
+            pCalloc->Free(pFilePath);
         }
-        else
-        {
-            // Should not reach here
-            ASSERT(0);
-        }
+
+        bitmapElem.push_back(JSONNode(("bitmapPath"), bitmapRelPath)); 
 
         DOM::Utils::MATRIX2D matrix1 = matrix;
         matrix1.a /= 20.0;
@@ -571,7 +583,7 @@ namespace OpenFL
 
         if (m_strokeStyle.type == SOLID_STROKE_STYLE_TYPE)
         {
-            m_pathElem->push_back(JSONNode("strokewidth", OpenFL::Utils::ToString((double)m_strokeStyle.solidStrokeStyle.thickness).c_str()));
+            m_pathElem->push_back(JSONNode("strokeWidth", OpenFL::Utils::ToString((double)m_strokeStyle.solidStrokeStyle.thickness).c_str()));
             m_pathElem->push_back(JSONNode("fill", "none"));
             m_pathElem->push_back(JSONNode("strokeLinecap", Utils::ToString(m_strokeStyle.solidStrokeStyle.capStyle.type).c_str()));
             m_pathElem->push_back(JSONNode("strokeLinejoin", Utils::ToString(m_strokeStyle.solidStrokeStyle.joinStyle.type).c_str()));
@@ -624,7 +636,7 @@ namespace OpenFL
         FCM::U_Int32 resId,
         FCM::S_Int32 height, 
         FCM::S_Int32 width,
-        FCM::StringRep16 pName,
+        const std::string& name,
         DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
@@ -638,54 +650,114 @@ namespace OpenFL
         bitmapElem.push_back(JSONNode(("height"), OpenFL::Utils::ToString(height)));
         bitmapElem.push_back(JSONNode(("width"), OpenFL::Utils::ToString(width)));
 
-        // Form the image path
-        bitmapName = Utils::ToString(pName, m_pCallback);
-        std::size_t pos = bitmapName.find(".");
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        std::string bitmapRelPath;
+        std::string bitmapExportPath = m_outputImageFolder + "/";
+            
+        bitmapExportPath += name;
+            
+        bitmapRelPath = "./";
+        bitmapRelPath += IMAGE_FOLDER;
+        bitmapRelPath += "/";
+        bitmapRelPath += name;
 
-        if (pos != std::string::npos)
+        res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+
+        FCM::AutoPtr<DOM::Service::Image::IBitmapExportService> bitmapExportService = pUnk;
+        if (bitmapExportService)
         {
-            FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
-            std::string bitmapRelPath;
-            std::string bitmapExportPath = m_outputImageFolder + "/";
-            
-            if ((bitmapName.substr(pos + 1) != "jpg") ||
-                (bitmapName.substr(pos + 1) != "png"))
-            {
-                std::string bitmapNameWithoutExt;
-
-                bitmapNameWithoutExt = bitmapName.substr(0, pos);
-                bitmapName = bitmapNameWithoutExt + ".png";
-            }
-
-            bitmapExportPath += bitmapName;
-            
-            bitmapRelPath = "./";
-            bitmapRelPath += IMAGE_FOLDER;
-            bitmapRelPath += "/" + bitmapName;
-
-            res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
+            FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
+            FCM::StringRep16 pFilePath = Utils::ToString16(bitmapExportPath, m_pCallback);
+            res = bitmapExportService->ExportToFile(pMediaItem, pFilePath, 100);
             ASSERT(FCM_SUCCESS_CODE(res));
 
-            FCM::AutoPtr<DOM::Service::Image::IBitmapExportService> bitmapExportService = pUnk;
-            if (bitmapExportService)
-            {
-                res = bitmapExportService->ExportToFile(pMediaItem, Utils::ToString16(bitmapExportPath, m_pCallback), 100);
-                ASSERT(FCM_SUCCESS_CODE(res));
-            }
+            pCalloc = OpenFL::Utils::GetCallocService(m_pCallback);
+            ASSERT(pCalloc.m_Ptr != NULL);
 
-            bitmapElem.push_back(JSONNode(("bitmapPath"), bitmapRelPath)); 
+            pCalloc->Free(pFilePath);
         }
-        else
-        {
-            // Should not reach here
-            ASSERT(0);
-        }
+
+        bitmapElem.push_back(JSONNode(("bitmapPath"), bitmapRelPath)); 
 
         m_pBitmapArray->push_back(bitmapElem);
 
         return FCM_SUCCESS;
     }
 
+	FCM::Result JSONOutputWriter::DefineText(
+            FCM::U_Int32 resId, 
+            const std::string& name, 
+            const DOM::Utils::COLOR& color, 
+            const std::string& displayText, 
+            DOM::FrameElement::PIClassicText pTextItem)
+    {
+        std::string txt = displayText;
+        std::string colorStr = Utils::ToString(color);
+        std::string find = "\r";
+        std::string replace = "\\r";
+        std::string::size_type i =0;
+        JSONNode textElem(JSON_NODE);
+
+        while (true) {
+            /* Locate the substring to replace. */
+            i = txt.find(find, i);
+           
+            if (i == std::string::npos) break;
+            /* Make the replacement. */
+            txt.replace(i, find.length(), replace);
+
+            /* Advance index forward so the next iteration doesn't pick it up as well. */
+            i += replace.length();
+        }
+
+        
+        textElem.push_back(JSONNode(("charid"), OpenFL::Utils::ToString(resId)));
+        textElem.push_back(JSONNode(("displayText"),txt ));
+        textElem.push_back(JSONNode(("font"),name));
+        textElem.push_back(JSONNode("color", colorStr.c_str()));
+
+        m_pTextArray->push_back(textElem);
+
+        return FCM_SUCCESS;
+    }
+
+    FCM::Result JSONOutputWriter::DefineSound(
+            FCM::U_Int32 resId, 
+			const std::string& name, 
+            DOM::LibraryItem::PIMediaItem pMediaItem)
+    {
+        FCM::Result res;
+        JSONNode soundElem(JSON_NODE);
+        std::string soundPath;
+        std::string soundName;
+        soundElem.set_name("sound");
+        soundElem.push_back(JSONNode(("charid"), OpenFL::Utils::ToString(resId)));
+        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+        std::string soundRelPath;
+        std::string soundExportPath = m_outputSoundFolder + "/";
+        soundExportPath += name;
+        soundRelPath = "./";
+        soundRelPath += SOUND_FOLDER;
+        soundRelPath += "/";
+        soundRelPath += name;
+        res = m_pCallback->GetService(DOM::FLA_SOUND_SERVICE, pUnk.m_Ptr);
+        ASSERT(FCM_SUCCESS_CODE(res));
+        FCM::AutoPtr<DOM::Service::Sound::ISoundExportService> soundExportService = pUnk;
+        if (soundExportService)
+        {
+            FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
+            FCM::StringRep16 pFilePath = Utils::ToString16(soundExportPath, m_pCallback);
+            res = soundExportService->ExportToFile(pMediaItem, pFilePath);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            pCalloc = OpenFL::Utils::GetCallocService(m_pCallback);
+            ASSERT(pCalloc.m_Ptr != NULL);
+            pCalloc->Free(pFilePath);
+        }
+        soundElem.push_back(JSONNode(("soundPath"), soundRelPath)); 
+        m_pSoundArray->push_back(soundElem);
+        return FCM_SUCCESS;
+    }
 
     JSONOutputWriter::JSONOutputWriter(FCM::PIFCMCallback pCallback)
         : m_pCallback(pCallback),
@@ -711,6 +783,13 @@ namespace OpenFL
         ASSERT(m_pBitmapArray);
         m_pBitmapArray->set_name("Bitmaps");
 
+		m_pTextArray = new JSONNode(JSON_ARRAY);
+        ASSERT(m_pTextArray);
+        m_pTextArray->set_name("Text");
+
+        m_pSoundArray = new JSONNode(JSON_ARRAY);
+        ASSERT(m_pSoundArray);
+        m_pSoundArray->set_name("Sounds");
         m_strokeStyle.type = INVALID_STROKE_STYLE_TYPE;
     }
 
@@ -718,10 +797,13 @@ namespace OpenFL
     JSONOutputWriter::~JSONOutputWriter()
     {
         delete m_pBitmapArray;
+        delete m_pSoundArray;
 
         delete m_pTimelineArray;
 
         delete m_pShapeArray;
+
+		delete m_pTextArray;
 
         delete m_pRootNode;
     }
@@ -769,6 +851,63 @@ namespace OpenFL
     }
 
 
+    FCM::Result JSONTimelineWriter::PlaceObject(
+        FCM::U_Int32 resId,
+        FCM::U_Int32 objectId,
+        FCM::PIFCMUnknown pUnknown /* = NULL*/)
+    {
+        FCM::Result res;
+
+        JSONNode commandElement(JSON_NODE);
+        FCM::AutoPtr<DOM::FrameElement::ISound> pSound;
+
+        commandElement.push_back(JSONNode("cmdType", "Place"));
+        commandElement.push_back(JSONNode("charid", OpenFL::Utils::ToString(resId)));
+        commandElement.push_back(JSONNode("objectId", OpenFL::Utils::ToString(objectId)));
+
+        pSound = pUnknown;
+        if (pSound)
+        {
+            DOM::FrameElement::SOUND_LOOP_MODE lMode;
+            DOM::FrameElement::SOUND_LIMIT soundLimit;
+            DOM::FrameElement::SoundSyncMode syncMode;
+
+            soundLimit.structSize = sizeof(DOM::FrameElement::SOUND_LIMIT);
+            lMode.structSize = sizeof(DOM::FrameElement::SOUND_LOOP_MODE);
+
+            res = pSound->GetLoopMode(lMode);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            commandElement.push_back(JSONNode("loopMode", 
+                OpenFL::Utils::ToString(lMode.loopMode)));
+            commandElement.push_back(JSONNode("repeatCount", 
+                OpenFL::Utils::ToString(lMode.repeatCount)));
+
+            res = pSound->GetSyncMode(syncMode);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            commandElement.push_back(JSONNode("syncMode", 
+                OpenFL::Utils::ToString(syncMode)));
+
+            // We should not get SOUND_SYNC_STOP as for stop, "RemoveObject" command will
+            // be generated by Exporter Service.
+            ASSERT(syncMode != DOM::FrameElement::SOUND_SYNC_STOP); 
+
+            res = pSound->GetSoundLimit(soundLimit);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            commandElement.push_back(JSONNode("LimitInPos44", 
+                OpenFL::Utils::ToString(soundLimit.inPos44)));
+            commandElement.push_back(JSONNode("LimitOutPos44", 
+                OpenFL::Utils::ToString(soundLimit.outPos44)));
+
+            // TODO: Dump sound effect
+        }
+
+        m_pCommandArray->push_back(commandElement);
+
+        return res;
+    }
     FCM::Result JSONTimelineWriter::RemoveObject(
         FCM::U_Int32 objectId)
     {
@@ -789,14 +928,11 @@ namespace OpenFL
     {
         JSONNode commandElement(JSON_NODE);
 
-        // Goutam: Commenting out the code for demo as fix is necessary in the Exporter service for it work properly.
-#if 0
         commandElement.push_back(JSONNode("cmdType", "UpdateZOrder"));
-        commandElement.push_back(JSONNode("objectId", std::to_string((FCM::U_Int64)(objectId)).c_str()));
-        commandElement.push_back(JSONNode("placeAfter", std::to_string((FCM::U_Int64)(placeAfterObjectId)).c_str()));
+        commandElement.push_back(JSONNode("objectId", OpenFL::Utils::ToString(objectId)));
+        commandElement.push_back(JSONNode("placeAfter", OpenFL::Utils::ToString(placeAfterObjectId)));
 
         m_pCommandArray->push_back(commandElement);
-#endif
 
         return FCM_SUCCESS;
     }
@@ -806,8 +942,40 @@ namespace OpenFL
         FCM::U_Int32 objectId,
         DOM::FrameElement::BlendMode blendMode)
     {
-        // Not tested yet
+        JSONNode commandElement(JSON_NODE);
 
+        commandElement.push_back(JSONNode("cmdType", "UpdateBlendMode"));
+        commandElement.push_back(JSONNode("objectId", OpenFL::Utils::ToString(objectId)));
+        if(blendMode == 0)
+            commandElement.push_back(JSONNode("blendMode","Normal"));
+        else if(blendMode == 1)
+            commandElement.push_back(JSONNode("blendMode","Layer"));
+        else if(blendMode == 2)
+            commandElement.push_back(JSONNode("blendMode","Darken"));
+        else if(blendMode == 3)
+            commandElement.push_back(JSONNode("blendMode","Multiply"));
+        else if(blendMode == 4)
+            commandElement.push_back(JSONNode("blendMode","Lighten"));
+        else if(blendMode == 5)
+            commandElement.push_back(JSONNode("blendMode","Screen"));
+        else if(blendMode == 6)
+            commandElement.push_back(JSONNode("blendMode","Overlay"));
+        else if(blendMode == 7)
+            commandElement.push_back(JSONNode("blendMode","Hardlight"));
+        else if(blendMode == 8)
+            commandElement.push_back(JSONNode("blendMode","Add"));
+        else if(blendMode == 9)
+            commandElement.push_back(JSONNode("blendMode","Substract"));
+        else if(blendMode == 10)
+            commandElement.push_back(JSONNode("blendMode","Difference"));
+        else if(blendMode == 11)
+            commandElement.push_back(JSONNode("blendMode","Invert"));
+        else if(blendMode == 12)
+            commandElement.push_back(JSONNode("blendMode","Alpha"));
+        else if(blendMode == 13)
+            commandElement.push_back(JSONNode("blendMode","Erase"));
+
+         m_pCommandArray->push_back(commandElement);
         return FCM_SUCCESS;
     }
 
@@ -840,7 +1008,575 @@ namespace OpenFL
         FCM::U_Int32 objectId,
         FCM::PIFCMUnknown pFilter)
     {
-        // Not tested yet
+        FCM::Result res;
+        JSONNode commandElement(JSON_NODE);
+        commandElement.push_back(JSONNode("cmdType", "UpdateFilter"));
+        commandElement.push_back(JSONNode("objectId", OpenFL::Utils::ToString(objectId)));
+        FCM::AutoPtr<DOM::GraphicFilter::IDropShadowFilter> pDropShadowFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IBlurFilter> pBlurFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IGlowFilter> pGlowFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IBevelFilter> pBevelFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IGradientGlowFilter> pGradientGlowFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IGradientBevelFilter> pGradientBevelFilter = pFilter;
+        FCM::AutoPtr<DOM::GraphicFilter::IAdjustColorFilter> pAdjustColorFilter = pFilter;
+
+        if (pDropShadowFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  angle;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            FCM::Double  distance;
+            FCM::Boolean hideObject;
+            FCM::Boolean innerShadow;
+            FCM::Boolean knockOut;
+            DOM::Utils::FilterQualityType qualityType;
+            DOM::Utils::COLOR color;
+            FCM::S_Int32 strength;
+            std::string colorStr;
+
+            commandElement.push_back(JSONNode("filterType", "DropShadowFilter"));
+
+            pDropShadowFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pDropShadowFilter->GetAngle(angle);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("angle", OpenFL::Utils::ToString((double)angle)));
+
+            res = pDropShadowFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pDropShadowFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pDropShadowFilter->GetDistance(distance);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("distance", OpenFL::Utils::ToString((double)distance)));
+
+            res = pDropShadowFilter->GetHideObject(hideObject);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(hideObject)
+            {
+                commandElement.push_back(JSONNode("hideObject", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("hideObject", "false"));
+            }
+
+            res = pDropShadowFilter->GetInnerShadow(innerShadow);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(innerShadow)
+            {
+                commandElement.push_back(JSONNode("innerShadow", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("innerShadow", "false"));
+            }
+
+            res = pDropShadowFilter->GetKnockout(knockOut);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(knockOut)
+            {
+                commandElement.push_back(JSONNode("knockOut", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("knockOut", "false"));
+            }
+
+            res = pDropShadowFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+
+            res = pDropShadowFilter->GetStrength(strength);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("strength", OpenFL::Utils::ToString(strength)));
+
+            res = pDropShadowFilter->GetShadowColor(color);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            colorStr = Utils::ToString(color);
+            commandElement.push_back(JSONNode("shadowColor", colorStr.c_str()));
+
+        }
+        if(pBlurFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            DOM::Utils::FilterQualityType qualityType;
+
+
+            commandElement.push_back(JSONNode("filterType", "BlurFilter"));
+
+            res = pBlurFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pBlurFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pBlurFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pBlurFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+        }
+
+        if(pGlowFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            FCM::Boolean innerShadow;
+            FCM::Boolean knockOut;
+            DOM::Utils::FilterQualityType qualityType;
+            DOM::Utils::COLOR color;
+            FCM::S_Int32 strength;
+            std::string colorStr;
+
+            commandElement.push_back(JSONNode("filterType", "GlowFilter"));
+
+            res = pGlowFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pGlowFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pGlowFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pGlowFilter->GetInnerShadow(innerShadow);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(innerShadow)
+            {
+                commandElement.push_back(JSONNode("innerShadow", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("innerShadow", "false"));
+            }
+
+            res = pGlowFilter->GetKnockout(knockOut);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(knockOut)
+            {
+                commandElement.push_back(JSONNode("knockOut", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("knockOut", "false"));
+            }
+
+            res = pGlowFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+
+            res = pGlowFilter->GetStrength(strength);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("strength", OpenFL::Utils::ToString(strength)));
+
+            res = pGlowFilter->GetShadowColor(color);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            colorStr = Utils::ToString(color);
+            commandElement.push_back(JSONNode("shadowColor", colorStr.c_str()));
+        }
+
+        if(pBevelFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  angle;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            FCM::Double  distance;
+            DOM::Utils::COLOR highlightColor;
+            FCM::Boolean knockOut;
+            DOM::Utils::FilterQualityType qualityType;
+            DOM::Utils::COLOR color;
+            FCM::S_Int32 strength;
+            DOM::Utils::FilterType filterType;
+            std::string colorStr;
+            std::string colorString;
+
+            commandElement.push_back(JSONNode("filterType", "BevelFilter"));
+
+            res = pBevelFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pBevelFilter->GetAngle(angle);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("angle", OpenFL::Utils::ToString((double)angle)));
+
+            res = pBevelFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pBevelFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pBevelFilter->GetDistance(distance);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("distance", OpenFL::Utils::ToString((double)distance)));
+
+            res = pBevelFilter->GetHighlightColor(highlightColor);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            colorString = Utils::ToString(highlightColor);
+            commandElement.push_back(JSONNode("highlightColor",colorString.c_str()));
+
+            res = pBevelFilter->GetKnockout(knockOut);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(knockOut)
+            {
+                commandElement.push_back(JSONNode("knockOut", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("knockOut", "false"));
+            }
+
+            res = pBevelFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+
+            res = pBevelFilter->GetStrength(strength);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("strength", OpenFL::Utils::ToString(strength)));
+
+            res = pBevelFilter->GetShadowColor(color);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            colorStr = Utils::ToString(color);
+            commandElement.push_back(JSONNode("shadowColor", colorStr.c_str()));
+
+            res = pBevelFilter->GetFilterType(filterType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (filterType == 0)
+                commandElement.push_back(JSONNode("filterType", "inner"));
+            else if (filterType == 1)
+                commandElement.push_back(JSONNode("filterType", "outer"));
+            else if (filterType == 2)
+                commandElement.push_back(JSONNode("filterType", "full"));
+
+        }
+
+        if(pGradientGlowFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  angle;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            FCM::Double  distance;
+            FCM::Boolean knockOut;
+            DOM::Utils::FilterQualityType qualityType;
+            FCM::S_Int32 strength;
+            DOM::Utils::FilterType filterType;
+
+            commandElement.push_back(JSONNode("filterType", "GradientGlowFilter"));
+
+            pGradientGlowFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pGradientGlowFilter->GetAngle(angle);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("angle", OpenFL::Utils::ToString((double)angle)));
+
+            res = pGradientGlowFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pGradientGlowFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pGradientGlowFilter->GetDistance(distance);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("distance", OpenFL::Utils::ToString((double)distance)));
+
+            res = pGradientGlowFilter->GetKnockout(knockOut);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(knockOut)
+            {
+                commandElement.push_back(JSONNode("knockOut", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("knockOut", "false"));
+            }
+
+            res = pGradientGlowFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+
+            res = pGradientGlowFilter->GetStrength(strength);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("strength", OpenFL::Utils::ToString(strength)));
+
+            res = pGradientGlowFilter->GetFilterType(filterType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (filterType == 0)
+                commandElement.push_back(JSONNode("filterType", "inner"));
+            else if (filterType == 1)
+                commandElement.push_back(JSONNode("filterType", "outer"));
+            else if (filterType == 2)
+                commandElement.push_back(JSONNode("filterType", "full"));
+
+            FCM::AutoPtr<FCM::IFCMUnknown> pColorGradient;
+            res = pGradientGlowFilter->GetGradient(pColorGradient.m_Ptr);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            FCM::AutoPtr<DOM::Utils::ILinearColorGradient> pLinearGradient = pColorGradient;
+            if (pLinearGradient)
+            {
+
+                FCM::U_Int8 colorCount;
+                //DOM::Utils::GRADIENT_COLOR_POINT colorPoint;
+
+                res = pLinearGradient->GetKeyColorCount(colorCount);
+                ASSERT(FCM_SUCCESS_CODE(res));
+
+                std::string colorArray ;
+                std::string posArray ;
+                JSONNode*   stopPointArray = new JSONNode(JSON_ARRAY);
+
+                for (FCM::U_Int32 l = 0; l < colorCount; l++)
+                {
+                    DOM::Utils::GRADIENT_COLOR_POINT colorPoint;
+                    pLinearGradient->GetKeyColorAtIndex(l, colorPoint);
+                    JSONNode stopEntry(JSON_NODE);
+                    FCM::Float offset;
+
+                    offset = (float)((colorPoint.pos * 100) / 255.0);
+
+                    stopEntry.push_back(JSONNode("offset", Utils::ToString((double) offset)));
+                    stopEntry.push_back(JSONNode("stopColor", Utils::ToString(colorPoint.color)));
+                    stopEntry.push_back(JSONNode("stopOpacity", Utils::ToString((double)(colorPoint.color.alpha / 255.0))));
+                    stopPointArray->set_name("GradientStops");
+                    stopPointArray->push_back(stopEntry);
+                }
+
+                commandElement.push_back(*stopPointArray);
+
+            }//lineargradient
+        }
+
+        if(pGradientBevelFilter)
+        {
+            FCM::Boolean enabled;
+            FCM::Double  angle;
+            FCM::Double  blurX;
+            FCM::Double  blurY;
+            FCM::Double  distance;
+            FCM::Boolean knockOut;
+            DOM::Utils::FilterQualityType qualityType;
+            FCM::S_Int32 strength;
+            DOM::Utils::FilterType filterType;
+
+            commandElement.push_back(JSONNode("filterType", "GradientBevelFilter"));
+
+            pGradientBevelFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pGradientBevelFilter->GetAngle(angle);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("angle", OpenFL::Utils::ToString((double)angle)));
+
+            res = pGradientBevelFilter->GetBlurX(blurX);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurX", OpenFL::Utils::ToString((double)blurX)));
+
+            res = pGradientBevelFilter->GetBlurY(blurY);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("blurY", OpenFL::Utils::ToString((double)blurY)));
+
+            res = pGradientBevelFilter->GetDistance(distance);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("distance", OpenFL::Utils::ToString((double)distance)));
+
+            res = pGradientBevelFilter->GetKnockout(knockOut);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if(knockOut)
+            {
+                commandElement.push_back(JSONNode("knockOut", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("knockOut", "false"));
+            }
+
+            res = pGradientBevelFilter->GetQuality(qualityType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (qualityType == 0)
+                commandElement.push_back(JSONNode("qualityType", "low"));
+            else if (qualityType == 1)
+                commandElement.push_back(JSONNode("qualityType", "medium"));
+            else if (qualityType == 2)
+                commandElement.push_back(JSONNode("qualityType", "high"));
+
+            res = pGradientBevelFilter->GetStrength(strength);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("strength", OpenFL::Utils::ToString(strength)));
+
+            res = pGradientBevelFilter->GetFilterType(filterType);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            if (filterType == 0)
+                commandElement.push_back(JSONNode("filterType", "inner"));
+            else if (filterType == 1)
+                commandElement.push_back(JSONNode("filterType", "outer"));
+            else if (filterType == 2)
+                commandElement.push_back(JSONNode("filterType", "full"));
+
+            FCM::AutoPtr<FCM::IFCMUnknown> pColorGradient;
+            res = pGradientBevelFilter->GetGradient(pColorGradient.m_Ptr);
+            ASSERT(FCM_SUCCESS_CODE(res));
+
+            FCM::AutoPtr<DOM::Utils::ILinearColorGradient> pLinearGradient = pColorGradient;
+            if (pLinearGradient)
+            {
+
+                FCM::U_Int8 colorCount;
+                //DOM::Utils::GRADIENT_COLOR_POINT colorPoint;
+
+                res = pLinearGradient->GetKeyColorCount(colorCount);
+                ASSERT(FCM_SUCCESS_CODE(res));
+
+                std::string colorArray ;
+                std::string posArray ;
+                JSONNode*   stopPointsArray = new JSONNode(JSON_ARRAY);
+
+                for (FCM::U_Int32 l = 0; l < colorCount; l++)
+                {
+                    DOM::Utils::GRADIENT_COLOR_POINT colorPoint;
+                    pLinearGradient->GetKeyColorAtIndex(l, colorPoint);
+                    JSONNode stopEntry(JSON_NODE);
+                    FCM::Float offset;
+
+                    offset = (float)((colorPoint.pos * 100) / 255.0);
+
+                    stopEntry.push_back(JSONNode("offset", Utils::ToString((double) offset)));
+                    stopEntry.push_back(JSONNode("stopColor", Utils::ToString(colorPoint.color)));
+                    stopEntry.push_back(JSONNode("stopOpacity", Utils::ToString((double)(colorPoint.color.alpha / 255.0))));
+                    stopPointsArray->set_name("GradientStops");
+                    stopPointsArray->push_back(stopEntry);
+                }
+
+                commandElement.push_back(*stopPointsArray);
+
+            }//lineargradient
+        }
+
+        if(pAdjustColorFilter)
+        {
+            FCM::Double brightness;
+            FCM::Double contrast;
+            FCM::Double saturation;
+            FCM::Double hue;
+            FCM::Boolean enabled;
+
+            commandElement.push_back(JSONNode("filterType", "AdjustColorFilter"));
+
+            pAdjustColorFilter->IsEnabled(enabled);
+            if(enabled)
+            {
+                commandElement.push_back(JSONNode("enabled", "true"));
+            }
+            else
+            {
+                commandElement.push_back(JSONNode("enabled", "false"));
+            }
+
+            res = pAdjustColorFilter->GetBrightness(brightness);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("brightness", OpenFL::Utils::ToString((double)brightness)));
+
+            res = pAdjustColorFilter->GetContrast(contrast);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("contrast", OpenFL::Utils::ToString((double)contrast)));
+
+            res = pAdjustColorFilter->GetSaturation(saturation);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("saturation", OpenFL::Utils::ToString((double)saturation)));
+
+            res = pAdjustColorFilter->GetHue(hue);
+            ASSERT(FCM_SUCCESS_CODE(res));
+            commandElement.push_back(JSONNode("hue", OpenFL::Utils::ToString((double)hue)));
+        }
+
+        m_pCommandArray->push_back(commandElement);
 
         return FCM_SUCCESS;
     }
@@ -875,29 +1611,83 @@ namespace OpenFL
 
     FCM::Result JSONTimelineWriter::ShowFrame(FCM::U_Int32 frameNum)
     {
-        JSONNode frameElement(JSON_NODE);
-
-        frameElement.push_back(JSONNode(("num"), OpenFL::Utils::ToString(frameNum)));
-        frameElement.push_back(*m_pCommandArray);
-        m_pFrameArray->push_back(frameElement);
+        m_pFrameElement->push_back(JSONNode(("num"), OpenFL::Utils::ToString(frameNum)));
+        m_pFrameElement->push_back(*m_pCommandArray);
+        m_pFrameArray->push_back(*m_pFrameElement);
 
         delete m_pCommandArray;
+        delete m_pFrameElement;
 
         m_pCommandArray = new JSONNode(JSON_ARRAY);
         m_pCommandArray->set_name("Command");
 
+        m_pFrameElement = new JSONNode(JSON_NODE);
+        ASSERT(m_pFrameElement);
+
+        
         return FCM_SUCCESS;
     }
 
 
-    FCM::Result JSONTimelineWriter::AddFrameScript(FCM::StringRep16 pFrameScript)
+    FCM::Result JSONTimelineWriter::AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum)
     {
-        // Not tested yet
+        std::string script = Utils::ToString(pScript, m_pCallback);
+
+        std::string scriptWithLayerNumber = "script Layer" +  Utils::ToString(layerNum);
+
+        std::string find = "\n";
+        std::string replace = "\\n";
+        std::string::size_type i =0;
+        JSONNode textElem(JSON_NODE);
+
+        while (true) {
+            /* Locate the substring to replace. */
+            i = script.find(find, i);
+           
+            if (i == std::string::npos) break;
+            /* Make the replacement. */
+            script.replace(i, find.length(), replace);
+
+            /* Advance index forward so the next iteration doesn't pick it up as well. */
+            i += replace.length();
+        }
+
+        
+        Utils::Trace(m_pCallback, "[AddFrameScript] (Layer: %d): %s\n", layerNum, script.c_str());
+
+        m_pFrameElement->push_back(JSONNode(scriptWithLayerNumber,script));
 
         return FCM_SUCCESS;
     }
 
-    JSONTimelineWriter::JSONTimelineWriter()
+
+    FCM::Result JSONTimelineWriter::RemoveFrameScript(FCM::U_Int32 layerNum)
+    {
+        Utils::Trace(m_pCallback, "[RemoveFrameScript] (Layer: %d)\n", layerNum);
+
+        return FCM_SUCCESS;
+    }
+
+    FCM::Result JSONTimelineWriter::SetFrameLabel(FCM::StringRep16 pLabel, DOM::KeyFrameLabelType labelType)
+    {
+        std::string label = Utils::ToString(pLabel, m_pCallback);
+        Utils::Trace(m_pCallback, "[SetFrameLabel] (Type: %d): %s\n", labelType, label.c_str());
+
+        if(labelType == 1)
+             m_pFrameElement->push_back(JSONNode("LabelType:Name",label));
+        else if(labelType == 2)
+             m_pFrameElement->push_back(JSONNode("labelType:Comment",label));
+        else if(labelType == 3)
+             m_pFrameElement->push_back(JSONNode("labelType:Ancor",label));
+        else if(labelType == 0)
+             m_pFrameElement->push_back(JSONNode("labelType","None"));
+
+        return FCM_SUCCESS;
+    }
+
+	
+    JSONTimelineWriter::JSONTimelineWriter(FCM::PIFCMCallback pCallback) :
+        m_pCallback(pCallback)
     {
         m_pCommandArray = new JSONNode(JSON_ARRAY);
         ASSERT(m_pCommandArray);
@@ -910,6 +1700,10 @@ namespace OpenFL
         m_pTimelineElement = new JSONNode(JSON_NODE);
         ASSERT(m_pTimelineElement);
         m_pTimelineElement->set_name("Timeline");
+
+        m_pFrameElement = new JSONNode(JSON_NODE);
+        ASSERT(m_pFrameElement);
+        //m_pCommandArray->set_name("Command");
     }
 
 
@@ -920,6 +1714,8 @@ namespace OpenFL
         delete m_pFrameArray;
 
         delete m_pTimelineElement;
+        
+        delete m_pFrameElement;
     }
 
 

@@ -57,6 +57,11 @@
 
 #endif
 
+#ifdef _DEBUG
+#define LOG(x) Utils::Log x
+#else
+#define LOG(x) 
+#endif
 /* -------------------------------------------------- Structs / Unions */
 
 
@@ -85,6 +90,8 @@ namespace OpenFL
         static std::string ToString(const DOM::Utils::JoinType& joinType);
         
         static std::string ToString(FCM::CStringRep16 pStr16, FCM::PIFCMCallback pCallback);
+
+        static std::string ToString(FCM::CStringRep8 pStr8);
         
         static FCM::StringRep16 ToString16(const std::string& str, FCM::PIFCMCallback pCallback);
 
@@ -101,12 +108,23 @@ namespace OpenFL
 
         static void GetFileName(const std::string& path, std::string& fileName);
 
+        static void GetFileNameWithoutExtension(const std::string& path, std::string& fileName);
+
+        static void GetFileExtension(const std::string& path, std::string& extension);
+
         static void GetModuleFilePath(std::string& path, FCM::PIFCMCallback pCallback);
         
         static FCM::AutoPtr<FCM::IFCMCalloc> GetCallocService(FCM::PIFCMCallback pCallback);
         
         static FCM::AutoPtr<FCM::IFCMStringUtils> GetStringUtilsService(FCM::PIFCMCallback pCallback);
-        
+
+        static void GetLanguageCode(FCM::PIFCMCallback pCallback, std::string& langCode);
+
+        static void GetAppVersion(FCM::PIFCMCallback pCallback, FCM::U_Int32& version);
+   
+        static void Trace(FCM::PIFCMCallback pCallback, const char* str, ...);
+
+        static void Log(const char* fmt, ...);
     };
 };
 

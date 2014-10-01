@@ -98,20 +98,16 @@ namespace OpenFL
 
         Utils::GetModuleFilePath(featureXMLPath, pCallback);
 
-#ifdef __APPLE__
-        featureXMLPath += "Common/Configuration/Extensions/Features.xml";
-#else
-        featureXMLPath += "Common\\Configuration\\Extensions\\Features.xml";
-#endif
+        featureXMLPath += "Features.xml";
 
         // trace
         FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
-        FCM::Result res = pCallback->GetService(FlashApplication::Service::FLASHAPP_OUTPUT_CONSOLE_SERVICE, pUnk.m_Ptr);
+        FCM::Result res = pCallback->GetService(Application::Service::FLASHAPP_OUTPUT_CONSOLE_SERVICE, pUnk.m_Ptr);
         ASSERT(FCM_SUCCESS_CODE(res));
         
-        FCM::AutoPtr<FlashApplication::Service::IOutputConsoleService> outputConsoleService = pUnk;
+        FCM::AutoPtr<Application::Service::IOutputConsoleService> outputConsoleService = pUnk;
         FCM::StringRep16 path = Utils::ToString16(featureXMLPath,pCallback);
-        FCM::StringRep16 outputString = Utils::ToString16(std::string("\n.....The feature settings for the OpenFLExtension document type is read from "),GetCallback());
+        FCM::StringRep16 outputString = Utils::ToString16(std::string("\nThe feature settings for the SamplePlugin document type is read from "),GetCallback());
         outputConsoleService->Trace(outputString);
         outputConsoleService->Trace(path);
 
@@ -137,15 +133,23 @@ namespace OpenFL
             buffer[length] = 0;
         }
         xmlFile.close();        
-        
-        FeatureDocumentHandler featureXmlDocHandler(this);
-        SAXParser parser;
-        parser.setDocumentHandler(&featureXmlDocHandler);
-
-        XERCES_CPP_NAMESPACE::MemBufInputSource	memInput((const XMLByte*) buffer, length, "dummy", false);
-        m_bInited = true;
-        parser.parse(memInput);
-
+       
+        try {
+            XMLPlatformUtils::Initialize();
+            FeatureDocumentHandler featureXmlDocHandler(this);
+            SAXParser *parser = new SAXParser();
+            parser->setDocumentHandler(&featureXmlDocHandler);
+            
+            XERCES_CPP_NAMESPACE::MemBufInputSource	*memInput = new XERCES_CPP_NAMESPACE::MemBufInputSource((const XMLByte*) buffer, length, "dummy", false);
+            m_bInited = true;
+            parser->parse(*memInput);
+            delete parser;
+			delete memInput;
+            XMLPlatformUtils::Terminate();
+        }
+        catch (...) {
+            ASSERT(0);
+        }
         delete[] buffer;
     }
 
@@ -273,7 +277,7 @@ namespace OpenFL
             CStringRep16 inPropName,
             FCM::VARIANT& outDefVal)
     {
-        /*
+		// Any boolean value retuened as string should be "true" or "false"
         FCM::Result res = FCM_INVALID_PARAM;
         std::string featureName = Utils::ToString(inFeatureName, GetCallback());
         std::string propName = Utils::ToString(inPropName, GetCallback());
@@ -283,24 +287,26 @@ namespace OpenFL
         if (pFeature != NULL && pFeature->IsSupported())
         {
             pProperty = pFeature->FindProperty(propName);
-            if (pProperty != NULL && pProperty->IsSupported())
+            if (pProperty != NULL /*&& pProperty->IsSupported()*/)
             {
                 std::string strVal = pProperty->GetDefault();
                 std::istringstream iss(strVal);
+				res = FCM_SUCCESS;
                 switch (outDefVal.m_type) {
                     case kFCMVarype_UInt32: iss>>outDefVal.m_value.uVal;break;
                     case kFCMVarype_Float: iss>>outDefVal.m_value.fVal;break;
                     case kFCMVarype_Bool: outDefVal.m_value.bVal = (kValue_true == strVal); break;
                     case kFCMVarype_CString: outDefVal.m_value.strVal = Utils::ToString16(strVal, GetCallback()); break;
                     case kFCMVarype_Double: iss>>outDefVal.m_value.dVal;break;
-                    default: break;
+                    default: 
+					ASSERT(0);
+					res = FCM_INVALID_PARAM;
+					break;
                 }
             }
         }
 
-        isSupported = (pFeature == NULL) || (pFeature->IsSupported() && ((pProperty == NULL) || pFeature->IsSupported()));
-        */
-        return FCM_SUCCESS;
+        return res;
     }
 
 
@@ -591,7 +597,7 @@ namespace OpenFL
 
     /* -------------------------------------------------- Public Global Functions */
 
-    FCM::Result RegisterDocType(FCM::PIFCMDictionary pPlugins)
+    FCM::Result RegisterDocType(FCM::PIFCMDictionary pPlugins, const std::string& resPath)
     {
         FCM::Result res = FCM_SUCCESS;
 
@@ -599,28 +605,28 @@ namespace OpenFL
          * Dictionary structure for a DocType plugin is as follows:
          *
          *  Level 0 :    
-         *              -----------------------
-         *             | Flash.Plugin |  ----- | --------------------------------
-         *              -----------------------                                  |
+         *              --------------------------
+         *             | Flash.Component |  ----- | -----------------------------
+         *              --------------------------                               |
          *                                                                       |
          *  Level 1:                                   <-------------------------                          
          *              -----------------------------  
          *             | CLSID_DocType_GUID |  ----- | --------------------------
          *              -----------------------------                            |
          *                                                                       |
-         *  Level 2:                                      <---------------------- 
-         *              ---------------------------------
-         *             | Flash.Category.DocType |  ----- |-----------------------
-         *              ---------------------------------                        |
+         *  Level 2:                                                <------------- 
+         *              -------------------------------------------
+         *             | Flash.Component.Category.DocType |  ----- |-------------
+         *              -------------------------------------------              |
          *                                                                       |
          *  Level 3:                                                     <-------
-         *              ------------------------------------------------
-         *             | Flash.Plugin.Name          | "SamplePlugin"    |
-         *              ------------------------------------------------
-         *             | Flash.Plugin.UniversalName | "SamplePlugin"    |
-         *              ------------------------------------------------
-         *             | Flash.Plugin.Desc          | "The SamplePlugin"|
-         *              ------------------------------------------------
+         *              ------------------------------------------------------------
+         *             | Flash.Component.Category.Name          | "SamplePlugin"    |
+         *              ------------------------------------------------------------
+         *             | Flash.Component.Category.UniversalName | "com.example..."  |
+         *              ------------------------------------------------------------
+         *             | Flash.Component.DocType.Desc           | "The SamplePlugin"|
+         *              ------------------------------------------------------------
          *
          *  Note that before calling this function the level 0 dictionary has already
          *  been added. Here, the 1st, 2nd and 3rd level dictionaries are being added.
@@ -641,29 +647,61 @@ namespace OpenFL
                 {
                     // Level 3 Dictionary
 
-                    // Add plugin name - Used in the "New Document Dialog" / "Start Page".
+                    // Add short name - Used in the "New Document Dialog" / "Start Page".
                     std::string str_name = "OpenFL";
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_Name, 
-                        kFCMDictType_CString, 
+                        kFCMDictType_StringRep8, 
                         (FCM::PVoid)str_name.c_str(),
                         (FCM::U_Int32)str_name.length() + 1);
 
-                    // Add universal name - Used to refer to it from JSFL
+                    // Add universal name - Used to refer to it from JSFL and used in error messages
                     std::string str_name_uni = "OpenFL";
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_UniversalName, 
-                        kFCMDictType_CString, 
+                        kFCMDictType_StringRep8, 
                         (FCM::PVoid)str_name_uni.c_str(),
                         (FCM::U_Int32)str_name_uni.length() + 1);
 
                     // Add plugin description - Appears in the "New Document Dialog"
+                    // Plugin description can be localized depending on the languageCode.
                     std::string str_desc = "Create a new FLA file (*.fla) in the Flash Document window for use with OpenFL, enabling support for Windows, Mac, Linux, iOS, Android, BlackBerry, Tizen, Firefox OS, Flash, HTML5 and other targets from a single codebase.";
+
+                    if (!resPath.empty())
+                    {
+                        // Look for the localized string for description
+                        std::string path = resPath + "res.txt";
+                        FILE* fp = fopen(path.c_str(), "rb");
+                        if (fp != NULL)
+                        {
+                            long fileSize;
+                            std::auto_ptr<char> pDesc;
+                            size_t num;
+                            fseek(fp, 0, SEEK_END);
+                            fileSize = ftell(fp);
+
+                            pDesc.reset(new char[fileSize]);
+
+                            fseek(fp, 0, SEEK_SET);
+                            num = fread(pDesc.get(), 1, fileSize, fp);
+
+                            if (num > 0)
+                            {
+                                // Found description
+                                str_desc = pDesc.get();
+                                str_desc[fileSize] = 0;
+                            }
+
+                            fclose(fp);
+                        }
+                    }
+
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashDocTypeKey_Desc, 
-                        kFCMDictType_CString, 
+                        kFCMDictType_StringRep8, 
                         (FCM::PVoid)str_desc.c_str(),
                         (FCM::U_Int32)str_desc.length() + 1);
+
                 }
             }
         }
