@@ -71,7 +71,7 @@
 		<Property name ="ImportEmbeddedSWF" supported="false"/>
 	</Feature>
 	<Feature name="3D" supported="false" />
-	<Feature name="ScriptLinkage" supported="false">
+	<Feature name="ScriptLinkage" supported="true">
 		<Property name ="Declaration" supported="true"/>
 		<Property name ="Definition" supported="true"/>
 	</Feature>
@@ -98,7 +98,7 @@
 			<Value name="Alpha" supported="true"/>
 			<Value name="Erase" supported="true"/>
 		</Property>
-		<Property name="ColorEffect" default="None" supported="false">
+		<Property name="ColorEffect" default="None" supported="true">
 			<Value name="None" supported="true"/>
 			<Value name="Brightness" supported="true"/>
 			<Value name="Tint" supported="true"/>

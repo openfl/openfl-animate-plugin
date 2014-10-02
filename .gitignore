@@ -1,3 +1,3 @@
 project/obj
-OpenFLExtension/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS
-OpenFLExtension/plugin/lib/win
+OpenFLPlugin/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS
+OpenFLPlugin/plugin/lib/win/OpenFLPlugin.fcm

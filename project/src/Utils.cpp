@@ -391,7 +391,7 @@ namespace OpenFL
 
         ASSERT(pFilePath);
 
-        ::GetModuleFileName((HINSTANCE)&__ImageBase, (LPSTR)pFilePath, MAX_PATH);
+        ::GetModuleFileNameW((HINSTANCE)&__ImageBase, pFilePath, MAX_PATH);
         
         fullPath = Utils::ToString(pFilePath, pCallback);
 

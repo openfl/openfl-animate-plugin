@@ -544,7 +544,7 @@ namespace OpenFL
         std::wstring tail;
         tail.assign(outputFileName.begin(), outputFileName.end());
         output += tail;
-        ShellExecute(NULL, (LPCSTR)L"open", (LPCSTR)output.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
 
 #else
 
