@@ -22,6 +22,10 @@
 
 #include "FCMPreConfig.h"
 
+#ifdef _MAC
+#include <sys/types.h>
+#endif
+
 
 namespace FCM
 {

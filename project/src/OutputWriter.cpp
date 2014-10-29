@@ -38,6 +38,10 @@
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
 
+#ifdef _MAC
+#include <cmath>
+#endif
+
 namespace OpenFL
 {
     static const std::string moveTo = "M";
