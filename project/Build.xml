@@ -38,6 +38,8 @@
 	</files>
 	
 	<include name="lib/json/files.xml" />
+	<include name="lib/curl/files.xml" if="mac" />
+	<include name="lib/zlib/files.xml" if="mac" />
 	
 	<set name="DEBUGEXTRA" value="-debug" if="fulldebug" />
 	
@@ -47,6 +49,8 @@
 		
 		<files id="openfl-plugin" />
 		<files id="native-toolkit-json" />
+		<files id="native-toolkit-curl" if="mac" />
+		<files id="native-toolkit-zlib" if="mac" />
 		
 		<section if="windows">
 			

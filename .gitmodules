@@ -4,3 +4,9 @@
 [submodule "project/lib/xerces-c"]
 	path = project/lib/xerces-c
 	url = https://github.com/native-toolkit/xerces-c
+[submodule "project/lib/curl"]
+	path = project/lib/curl
+	url = https://github.com/native-toolkit/curl
+[submodule "project/lib/zlib"]
+	path = project/lib/zlib
+	url = https://github.com/native-toolkit/zlib
