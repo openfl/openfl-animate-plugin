@@ -30,8 +30,8 @@ body {
         }
         
         #publish{
-       margin-left:auto;
-        margin-right:250px;
+       margin-left:350px;
+        margin-right:auto;
         bottom:25px;
         height:25px;
         width:100px;
@@ -53,71 +53,3 @@ body {
     margin-left:5px;
     margin-top:3px;
 }
-
-.myList{
-background:#ededed;
-border:1px solid #585858;
-display:inline;
-width:350px;
-color:#000000;
-}
-
-.myLabel2{
-           width:70px;
-           text-align:left;
-           display:block;
-           float:left;
-		   padding-left: 5px;
-		   padding-top: 4px;
-}
-
-.myLabel3{
-           width:80px;
-           text-align:right;
-           display:block;
-           float:left;
-		   padding-top:4px;
-		   padding-right:2px;
-}
-.myLabel4{
-           width:150px;
-           text-align:left;
-           display:block;
-           float:left;
-		   padding-top:4px;
-		   padding-right:10px;
-}
-
-#timeId{
-            background:#ededed;
-            border:1px solid #585858;
-            float:left;
-            display:block;
-            width:50px;
-            color:#000000;
-        }
-
-#jpegId{
-            background:#ededed;
-            border:1px solid #585858;
-            float:left;
-            display:block;
-            width:50px;
-            color:#000000;
-        }
-
-#myList3{
-            background:#ededed;
-            border:1px solid #585858;
-            width:75px;
-            color:#000000;
-        }
-
-.myListClass{
-            background:#ededed;
-            border:1px solid #585858;
-            display:block;
-            width:175px;
-            color:#000000;
-			float:left;
-        }

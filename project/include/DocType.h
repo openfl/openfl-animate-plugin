@@ -1,21 +1,3 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 /*
  * @file  DocType.h
  *
@@ -35,6 +17,7 @@
 #include "DocType/IDocType.h"
 #include "DocType/IFeatureMatrix.h"
 #include <string>
+#include "PluginConfiguration.h"
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -52,25 +35,6 @@ namespace OpenFL
 }
 
  
-/* -------------------------------------------------- Enums */
-
-
-/* -------------------------------------------------- Macros / Constants */
-
-namespace OpenFL
-{
-    // {835B2A74-9646-43AD-AA86-A35F4E0ECD1B}
-    const FCM::FCMCLSID CLSID_DocType =
-        {0x835b2a74, 0x9646, 0x43ad, {0xaa, 0x86, 0xa3, 0x5f, 0x4e, 0xe, 0xcd, 0x1b}};
-
-    // {50705258-F3B8-4CFF-929B-E10EC7DA8816}
-    const FCM::FCMCLSID CLSID_FeatureMatrix =
-        {0x50705258, 0xf3b8, 0x4cff, {0x92, 0x9b, 0xe1, 0xe, 0xc7, 0xda, 0x88, 0x16}};
-}
-
-
-/* -------------------------------------------------- Structs / Unions */
-
 namespace OpenFL
 {
     typedef std::map<std::string, Value*> StrValueMap;

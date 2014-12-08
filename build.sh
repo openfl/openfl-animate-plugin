@@ -11,4 +11,5 @@ haxelib run hxcpp Build.xml -Dmac -DHXCPP_M64
 
 cd ..
 mkdir -p ~/Library/Application\ Support/Adobe/CEP/extensions/
+mv OpenFLPlugin/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS/OpenFLPlugin.dylib OpenFLPlugin/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS/OpenFLPlugin
 cp -rf OpenFLPlugin ~/Library/Application\ Support/Adobe/CEP/extensions/OpenFLPlugin

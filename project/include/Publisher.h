@@ -1,21 +1,3 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 /**
  * @file  Publisher.h
  *
@@ -41,7 +23,7 @@
 #include "FrameElement/ITextStyle.h"
 #include "Exporter/Service/IFrameCommandGenerator.h"
 #include "OutputWriter.h"
-
+#include "PluginConfiguration.h"
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -90,33 +72,6 @@ namespace DOM
     #define OUTPUT_FILE_EXTENSION       "html"
 #endif
 
-
-namespace OpenFL
-{
-    // {1635256D-2F63-4715-BC70-6B2948CC84D5}
-    const FCMCLSID CLSID_Publisher =
-        {0x1635256d, 0x2f63, 0x4715, {0xbc, 0x70, 0x6b, 0x29, 0x48, 0xcc, 0x84, 0xd5}};
-
-
-    // {D5830903-02D6-4133-A1F1-F272D29A1802}
-    const FCM::FCMCLSID CLSID_ResourcePalette =
-        {0xd5830903, 0x2d6, 0x4133, {0xa1, 0xf1, 0xf2, 0x72, 0xd2, 0x9a, 0x18, 0x2}};
-
-    // {70E17C74-34DF-4C46-8F9D-900D2EC045E3}
-    const FCMCLSID CLSID_TimelineBuilder =
-        {0x70e17c74, 0x34df, 0x4c46, {0x8f, 0x9d, 0x90, 0xd, 0x2e, 0xc0, 0x45, 0xe3}};
-
-    // {442305C9-F02F-43A4-B259-D1CC39666A94}
-    const FCMCLSID CLSID_TimelineBuilderFactory =
-        {0x442305c9, 0xf02f, 0x43a4, {0xb2, 0x59, 0xd1, 0xcc, 0x39, 0x66, 0x6a, 0x94}};
-
-}
-
-
-/* -------------------------------------------------- Structs / Unions */
-
-
-/* -------------------------------------------------- Class Decl */
 
 namespace OpenFL
 {

@@ -1,24 +1,7 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 #include "OutputWriter.h"
 
 #include <cstring>
+#include <cmath>
 #include <fstream>
 #include "FlashFCMPublicIDs.h"
 #include "FCMPluginInterface.h"
@@ -38,10 +21,6 @@
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
 
-#ifdef _MAC
-#include <cmath>
-#endif
-
 namespace OpenFL
 {
     static const std::string moveTo = "M";
@@ -57,7 +36,7 @@ namespace OpenFL
         "<!DOCTYPE html>\r\n \
         <html>\r\n \
         <head> \r\n\
-            <script src=\"cjs/createjs-2013.12.12.min.js\"></script> \r\n\
+            <script src=\"cjs/openfl-2013.12.12.min.js\"></script> \r\n\
             <script src=\"cjs/movieclip-0.7.1.min.js\"></script> \r\n\
             <script src=\"cjs/easeljs-0.7.0.min.js\"></script> \r\n\
             <script src=\"cjs/tweenjs-0.5.1.min.js\"></script> \r\n\
@@ -71,7 +50,7 @@ namespace OpenFL
             \r\n\
             <script type=\"text/javascript\"> \r\n\
             \r\n\
-            var loader = new createjs.LoadQueue(false); \r\n\
+            var loader = new openfl.LoadQueue(false); \r\n\
             loader.addEventListener(\"complete\", handleComplete); \r\n\
             loader.loadManifest(\"./images/B.png\"); \r\n\
             function handleComplete() \r\n\
@@ -80,7 +59,7 @@ namespace OpenFL
                 \r\n\
                 \r\n\
                     var canvas = document.getElementById(\"canvas\"); \r\n\
-                    var stage = new createjs.Stage(canvas);         \r\n\
+                    var stage = new openfl.Stage(canvas);         \r\n\
                     //pass FPS and use that in the player \r\n\
                     init(stage, \"%s\", %d);             \r\n\
                 }); \r\n\
@@ -904,8 +883,6 @@ namespace OpenFL
                 OpenFL::Utils::ToString(soundLimit.inPos44)));
             commandElement.push_back(JSONNode("LimitOutPos44", 
                 OpenFL::Utils::ToString(soundLimit.outPos44)));
-
-            // TODO: Dump sound effect
         }
 
         m_pCommandArray->push_back(commandElement);
@@ -1608,7 +1585,7 @@ namespace OpenFL
         FCM::U_Int32 objectId,
         const DOM::Utils::COLOR_MATRIX& colorMatrix)
     {
-        // Not tested yet
+		// add code to write the color transform 
         return FCM_SUCCESS;
     }
 

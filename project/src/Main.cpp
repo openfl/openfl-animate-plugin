@@ -1,21 +1,3 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 #include "FCMPluginInterface.h"
 
 #include "DocType.h"
@@ -47,20 +29,20 @@ namespace OpenFL
     END_MODULE
 
     
-    OpenFLModule g_openFLModule;
-    
+    OpenFLModule g_createJSModule;
+
     extern "C" FCMPLUGIN_IMP_EXP FCM::Result PluginBoot(FCM::PIFCMCallback pCallback)
     {
         FCM::Result res;
         std::string langCode;
         std::string modulePath;
 
-        res = g_openFLModule.init(pCallback);
+        res = g_createJSModule.init(pCallback);
 
         Utils::GetModuleFilePath(modulePath, pCallback);
         Utils::GetLanguageCode(pCallback, langCode);
 
-        g_openFLModule.SetResPath(modulePath + "../res/" + langCode + "/");
+        g_createJSModule.SetResPath(modulePath + "../res/" + langCode + "/");
         return res;
     }
 
@@ -68,7 +50,7 @@ namespace OpenFL
         FCM::PIFCMCalloc pCalloc, 
         FCM::PFCMClassInterfaceInfo* ppClassInfo)
     {
-        return g_openFLModule.getClassInfo(pCalloc, ppClassInfo);
+        return g_createJSModule.getClassInfo(pCalloc, ppClassInfo);
     }
 
     extern "C" FCMPLUGIN_IMP_EXP FCM::Result PluginGetClassObject(
@@ -77,7 +59,7 @@ namespace OpenFL
         FCM::ConstRefFCMIID iid, 
         FCM::PPVoid pAny)
     {
-        return g_openFLModule.getClassObject(pUnkOuter, clsid, iid, pAny);
+        return g_createJSModule.getClassObject(pUnkOuter, clsid, iid, pAny);
     }
 
     // Register the plugin - Register plugin as both DocType and Publisher
@@ -90,7 +72,7 @@ namespace OpenFL
 	    AutoPtr<IFCMDictionary> pPlugins;
 	    pDictionary->AddLevel((const FCM::StringRep8)kFCMComponent, pPlugins.m_Ptr);
 	
-        res = RegisterDocType(pPlugins, g_openFLModule.GetResPath());
+        res = RegisterDocType(pPlugins, g_createJSModule.GetResPath());
         if (FCM_FAILURE_CODE(res))
         {
             return res;
@@ -103,12 +85,12 @@ namespace OpenFL
 
     extern "C" FCMPLUGIN_IMP_EXP FCM::U_Int32 PluginCanUnloadNow(void)
     {
-        return g_openFLModule.canUnloadNow();
+        return g_createJSModule.canUnloadNow();
     }
 
     extern "C" FCMPLUGIN_IMP_EXP FCM::Result PluginShutdown()
     {
-        g_openFLModule.finalize();
+        g_createJSModule.finalize();
 
         return FCM_SUCCESS;
     }

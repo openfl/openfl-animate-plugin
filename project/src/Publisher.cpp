@@ -1,21 +1,3 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 #ifdef _WINDOWS
 #include <Windows.h>
 #include "ShellApi.h"
@@ -77,7 +59,8 @@
 #include "Exporter/Service/ITimelineBuilderFactory.h"
 
 #include "Exporter/Service/ISWFExportService.h"
-
+#include <algorithm>
+#include "PluginConfiguration.h"
 
 namespace OpenFL
 {
@@ -430,7 +413,8 @@ namespace OpenFL
 
                 Utils::GetFileExtension(filePath, ext);
                 
-                // TODO: Convert "ext" to lower case and then compare
+                // Convert the extension to lower case and then compare
+				std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                 if (ext.compare("xfl") == 0)
                 {
                     std::string immParent;
@@ -544,7 +528,7 @@ namespace OpenFL
         std::wstring tail;
         tail.assign(outputFileName.begin(), outputFileName.end());
         output += tail;
-        ShellExecuteW(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecute(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
 
 #else
 
@@ -610,7 +594,7 @@ namespace OpenFL
                 res = pLibItem->GetProperties(pDict.m_Ptr);
                 ASSERT(FCM_SUCCESS_CODE(res));
 
-                res = pDict->GetInfo(kLibProp_LinkageIdentifier_DictKey, 
+                res = pDict->GetInfo(kLibProp_LinkageClass_DictKey, 
                     type, valLen);
 
                 if (FCM_SUCCESS_CODE(res))
@@ -1996,17 +1980,17 @@ namespace OpenFL
          *              -----------------------------------                      |
          *                                                                       |
          *  Level 3:                                                           <-
-         *              -----------------------------------------------------------
-         *             | Flash.Component.Category.Name           | "SamplePlugin"  |
-         *              -----------------------------------------------------------
-         *             | Flash.Component.Category.UniversalName  | "com.example..."|
-         *              -----------------------------------------------------------
-         *             | Flash.Component.Publisher.UI            | "com.example..."|
-         *              -----------------------------------------------------------
-         *             | Flash.Component.Publisher.TargetDocs    |        ---------|--
-         *              -----------------------------------------------------------   |
-         *                                                                            |
-         *  Level 4:                                                    <-------------
+         *              -------------------------------------------------------------------
+         *             | Flash.Component.Category.Name           | PUBLISHER_NAME          |
+         *              -------------------------------------------------------------------|
+         *             | Flash.Component.Category.UniversalName  | PUBLISHER_UNIVERSAL_NAME|
+         *              -------------------------------------------------------------------|
+         *             | Flash.Component.Publisher.UI            | PUBLISH_SETTINGS_UI_ID  |
+         *              -------------------------------------------------------------------|
+         *             | Flash.Component.Publisher.TargetDocs    |              -----------|--
+         *              -------------------------------------------------------------------| |
+         *                                                                                   |
+         *  Level 4:                                                    <--------------------
          *              -----------------------------------------------
          *             | CLSID_DocType   |  Empty String               |
          *              -----------------------------------------------
@@ -2033,7 +2017,7 @@ namespace OpenFL
                     // Level 3 Dictionary
 
                     // Add short name
-                    std::string str_name = "SamplePlugin";
+                    std::string str_name = PUBLISHER_NAME;
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_Name,
                         kFCMDictType_StringRep8, 
@@ -2042,14 +2026,14 @@ namespace OpenFL
 
                     // Add universal name - Used to refer to it from JSFL. Also, used in 
                     // error/warning messages.
-                    std::string str_uniname = "com.example.SamplePluginPublisher";
+                    std::string str_uniname = PUBLISHER_UNIVERSAL_NAME;
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_UniversalName,
                         kFCMDictType_StringRep8,
                         (FCM::PVoid)str_uniname.c_str(),
                         (FCM::U_Int32)str_uniname.length() + 1);
 
-                    std::string str_ui = "com.example.SamplePlugin.PublishSettings";
+                    std::string str_ui = PUBLISH_SETTINGS_UI_ID;
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashPublisherKey_UI, 
                         kFCMDictType_StringRep8, 

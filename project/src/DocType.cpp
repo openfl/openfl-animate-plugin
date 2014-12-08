@@ -1,21 +1,3 @@
-/*************************************************************************
-* ADOBE CONFIDENTIAL
-* ___________________
-*
-*  Copyright [2013] Adobe Systems Incorporated
-*  All Rights Reserved.
-*
-* NOTICE:  All information contained herein is, and remains
-* the property of Adobe Systems Incorporated and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Adobe Systems Incorporated and its
-* suppliers and are protected by all applicable intellectual 
-* property laws, including trade secret and copyright laws.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Adobe Systems Incorporated.
-**************************************************************************/
-
 #include "DocType.h"
 #include "Utils.h"
 #include "MyXmlParser.h"
@@ -24,6 +6,7 @@
 #include <sstream>
 
 #include "Application/Service/IOutputConsoleService.h"
+#include "PluginConfiguration.h"
 
 namespace OpenFL
 {
@@ -98,7 +81,7 @@ namespace OpenFL
 
         Utils::GetModuleFilePath(featureXMLPath, pCallback);
 
-        featureXMLPath += "Features.xml";
+        featureXMLPath += "../res/Features.xml";
 
         // trace
         FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
@@ -620,13 +603,13 @@ namespace OpenFL
          *              -------------------------------------------              |
          *                                                                       |
          *  Level 3:                                                     <-------
-         *              ------------------------------------------------------------
-         *             | Flash.Component.Category.Name          | "SamplePlugin"    |
-         *              ------------------------------------------------------------
-         *             | Flash.Component.Category.UniversalName | "com.example..."  |
-         *              ------------------------------------------------------------
-         *             | Flash.Component.DocType.Desc           | "The SamplePlugin"|
-         *              ------------------------------------------------------------
+         *              --------------------------------------------------------------------
+         *             | Flash.Component.Category.Name          |  DOCTYPE_NAME             |
+         *              --------------------------------------------------------------------
+         *             | Flash.Component.Category.UniversalName |  DOCTYPE_UNIVERSAL_NAME   |
+         *              --------------------------------------------------------------------
+         *             | Flash.Component.DocType.Desc           |  DOCTYPE_DESCRIPTION      |
+         *              --------------------------------------------------------------------
          *
          *  Note that before calling this function the level 0 dictionary has already
          *  been added. Here, the 1st, 2nd and 3rd level dictionaries are being added.
@@ -648,7 +631,7 @@ namespace OpenFL
                     // Level 3 Dictionary
 
                     // Add short name - Used in the "New Document Dialog" / "Start Page".
-                    std::string str_name = "OpenFL";
+                    std::string str_name = DOCTYPE_NAME;
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_Name, 
                         kFCMDictType_StringRep8, 
@@ -656,7 +639,7 @@ namespace OpenFL
                         (FCM::U_Int32)str_name.length() + 1);
 
                     // Add universal name - Used to refer to it from JSFL and used in error messages
-                    std::string str_name_uni = "OpenFL";
+                    std::string str_name_uni = DOCTYPE_UNIVERSAL_NAME;
                     res = pCategory->Add(
                         (const FCM::StringRep8)kFlashCategoryKey_UniversalName, 
                         kFCMDictType_StringRep8, 
@@ -665,7 +648,7 @@ namespace OpenFL
 
                     // Add plugin description - Appears in the "New Document Dialog"
                     // Plugin description can be localized depending on the languageCode.
-                    std::string str_desc = "Create a new FLA file (*.fla) in the Flash Document window for use with OpenFL, enabling support for Windows, Mac, Linux, iOS, Android, BlackBerry, Tizen, Firefox OS, Flash, HTML5 and other targets from a single codebase.";
+                    std::string str_desc = DOCTYPE_DESCRIPTION;
 
                     if (!resPath.empty())
                     {
