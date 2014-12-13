@@ -3,8 +3,8 @@
 <ExtensionManifest Version="4.0" ExtensionBundleId="org.openfl.OpenFLExtension" ExtensionBundleVersion="1.0.0"
 		ExtensionBundleName="OpenFL Extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
-		<Extension Id="org.openfl.OpenFLExtension.PublishSettings" Version="1.0" />
-		<Extension Id="org.openfl.OpenFLExtension.Plugin" Version="1.0" />
+		<Extension Id="org.openfl.OpenFLPlugin.PublishSettings" Version="1.0" />
+		<Extension Id="org.openfl.OpenFLPlugin" Version="1.0" />
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
@@ -19,7 +19,7 @@
 		</RequiredRuntimeList>
 	</ExecutionEnvironment>
 	<DispatchInfoList>
-		<Extension Id="org.openfl.OpenFLExtension.Plugin">
+		<Extension Id="org.openfl.OpenFLPlugin">
 			<DispatchInfo >
 				<Resources>
 				<MainPath>./plugin/fcm.xml</MainPath>
@@ -29,7 +29,7 @@
 				</Lifecycle>
 				<UI>
 					<Type>Panel</Type>
-					<Menu>OpenFLExtension</Menu>
+					<Menu>OpenFLPlugin</Menu>
 					<Geometry>
 						<Size>
 							<Height>200</Height>
@@ -39,7 +39,7 @@
 				</UI>
 			</DispatchInfo>
 		</Extension>
-		<Extension Id="org.openfl.OpenFLExtension.PublishSettings">
+		<Extension Id="org.openfl.OpenFLPlugin.PublishSettings">
 			<DispatchInfo >
 				<Resources>
 				<MainPath>./index.html</MainPath>
