@@ -119,7 +119,7 @@
 			<Value name="TrackAsMenuItem" supported="true"/>
 		</Property>
 	</Feature>
-	<Feature name="Filters" supported="false"/>
+	<Feature name="Filters" supported="true"/>
 	<Feature name="DropShadowFilter" supported="true">
 		<Property name="Quality" default="Low" supported="true"/>
 		<Property name="Angle" default ="0.785" supported="true"/>  !--- measured in radians ----!
