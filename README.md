@@ -4,6 +4,15 @@ OpenFL Flash Plugin
 This is a work in-progress custom plugin for Flash CC, which provides an OpenFL project type.
 
 
+Planned Features
+================
+
+ - [ ] Export both an "include.xml" and SWF content to a *.bundle file
+ - [ ] Expose additional options (such as the "generate" option) in publish settings
+ - [ ] Sweep through Flash editor features, disabling ones that are incompatible
+ - [ ] Consider support for Ctrl+Enter testing of OpenFL projects
+
+
 Development Builds
 ==================
 
