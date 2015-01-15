@@ -7,10 +7,12 @@ This is a work in-progress custom plugin for Flash CC, which provides an OpenFL 
 Planned Features
 ================
 
+ - [ ] Fix for OS X absolute paths to resolve errors when using CPublisher::Export()
  - [ ] Export both an "include.xml" and SWF content to a *.bundle file (see [PiratePig.bundle]( https://github.com/jgranick/PiratePig/tree/master/Assets/PiratePig.bundle))
  - [ ] Expose additional options (such as the "generate" option) in publish settings
  - [ ] Sweep through Flash editor features, disabling ones that are incompatible
  - [ ] Consider support for Ctrl+Enter testing of OpenFL projects
+ - [ ] Polish styles, output and workflow to feel as seamless/professional as possible
 
 
 Development Builds
