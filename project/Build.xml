@@ -23,6 +23,7 @@
 		<compilerflag value="-I${XDK_PATH}/core/include/interfaces" />
 		
 		<compilerflag value="-DNDEBUG" unless="debug" />
+		<compilerflag value="-DJSON_DEBUG" if="debug" />
 		<compilerflag value="-D_WINDOWS" if="windows" />
 		<compilerflag value="-D_MAC" if="mac" />
 		<compilerflag value="-DUSE_SWF_EXPORTER_SERVICE" />

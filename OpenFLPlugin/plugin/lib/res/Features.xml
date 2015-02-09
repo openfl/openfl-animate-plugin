@@ -71,8 +71,8 @@
 		<Property name ="ImportEmbeddedSWF" supported="false"/>
 	</Feature>
 	<Feature name="3D" supported="false" />
-	<Feature name="ScriptLinkage" supported="false">
-		<Property name ="Declaration" supported="true"/>
+	<Feature name="ScriptLinkage" supported="true">
+		<Property name ="Declaration" supported="false"/>
 		<Property name ="Definition" supported="true"/>
 	</Feature>
 	<Feature name="9Slice" supported="false" />
@@ -140,7 +140,7 @@
 	<Feature name="AdjustColorFilter" supported="true"/>
 	<Feature name="Compiler" supported="false"/>
 	<Feature name="Video" supported="false"/>
-	<Feature name="FrameScript" supported="false"/>
+	<Feature name="FrameScript" supported="true"/>
 	<Feature name="RuntimeSharedLibraries" supported="false"/>
 	<Feature name="Accessibility" supported="false"/>
 	<Feature name="Sound" supported="true">
@@ -171,7 +171,7 @@
 			<Value name="Speech" supported ="true"/>
 		</Property>
 	</Feature>		
-	<Feature name="ActionScript" supported="false">
+	<Feature name="ActionScript" supported="true">
 	</Feature>
 	<Feature name="Layer" supported="true">
 		<Property name="MaskLayer" supported="false"/>
