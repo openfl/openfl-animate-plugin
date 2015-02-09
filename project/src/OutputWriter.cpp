@@ -20,12 +20,6 @@
 #include "GraphicFilter/IGradientBevelFilter.h"
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
-//#include "xercesc/dom/DOMDocument.hpp"
-#include "xercesc/util/PlatformUtils.hpp"
-#include "xercesc/dom/DOM.hpp"
-#include "xercesc/framework/LocalFileFormatTarget.hpp"
-
-XERCES_CPP_NAMESPACE_USE
 
 namespace OpenFL
 {
@@ -35,8 +29,6 @@ namespace OpenFL
     static const std::string space = " ";
     static const std::string comma = ",";
     static const std::string semiColon = ";";
-	
-	static std::ofstream outputFileStream;
 
     static const FCM::Float GRADIENT_VECTOR_CONSTANT = 16384.0;
 
@@ -87,27 +79,6 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::StartOutput(std::string& outputFileName)
     {
-
-		std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/"; // TODO: get a relative path
-		//outputFileStream.open(exportDir + "scripts.xml");
-
-		XMLPlatformUtils::Initialize();
-		DOMImplementation *implementation = DOMImplementationRegistry::getDOMImplementation(XMLString::transcode("core"));
-		DOMDocument*        document = implementation->createDocument(0, L"symbols", 0);
-		DOMElement *pRoot = document->getDocumentElement();
-		DOMElement *pEle = document->createElement(L"symbol");
-		pRoot->appendChild(pEle);
-
-		XMLFormatTarget *target = new LocalFileFormatTarget("C:/Users/Marko/Desktop/ExportTest/scripts.xml");
-		DOMLSSerializer *writer = implementation->createLSSerializer();
-		DOMConfiguration *config= writer->getDomConfig();
-		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
-		DOMLSOutput *destination = implementation->createLSOutput();
-		destination->setByteStream(target);
-		writer->write(document, destination);
-
-		
-
         std::string parent;
         std::string jsonFile;
 
@@ -125,7 +96,7 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::EndOutput()
     {
-		outputFileStream.close();
+
         return FCM_SUCCESS;
     }
 
@@ -200,9 +171,6 @@ namespace OpenFL
         pWriter->Finish(resId, pName);
 
         m_pTimelineArray->push_back(*(pWriter->GetRoot()));
-
-		string idString = Utils::ToString(resId);
-		string nameString = Utils::ToString(pName, m_pCallback);
 
         return FCM_SUCCESS;
     }
@@ -1645,8 +1613,6 @@ namespace OpenFL
     FCM::Result JSONTimelineWriter::AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum)
     {
         std::string script = Utils::ToString(pScript, m_pCallback);
-
-		//outputFileStream << script;
 
         std::string scriptWithLayerNumber = "script Layer" +  Utils::ToString(layerNum);
 

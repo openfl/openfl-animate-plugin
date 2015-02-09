@@ -11,7 +11,7 @@ if "%1" == "clean" (
 )
 @echo on
 
-haxelib run hxcpp Build.xml -Dwindows -Ddebug -DHXCPP_M64
+haxelib run hxcpp Build.xml -Dwindows -DHXCPP_M64
 
 @echo off
 if %errorlevel% neq 0 (
@@ -22,4 +22,3 @@ if %errorlevel% neq 0 (
 
 cd ..
 xcopy OpenFLPlugin %APPDATA%\Adobe\CEP\extensions\OpenFLPlugin /s /i /y
-

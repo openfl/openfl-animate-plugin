@@ -8,9 +8,6 @@
 #define PUBLISHER_H_
 
 #include <vector>
-#include <iostream>
-#include <fstream>
-
 
 #include "Version.h"
 #include "FCMTypes.h"
@@ -29,8 +26,6 @@
 #include "PluginConfiguration.h"
 
 /* -------------------------------------------------- Forward Decl */
-
-using namespace std;
 
 using namespace FCM;
 using namespace Publisher;
@@ -107,8 +102,6 @@ namespace OpenFL
 
         ~CPublisher();
 
-		//static std::ofstream outputFileStream;
-
     private:
 
         bool ReadString(
@@ -137,7 +130,6 @@ namespace OpenFL
 
         FCM::Result ExportLibraryItems(FCM::FCMListPtr pLibraryItemList);
 
-		FCM::Result ExportLibraryItems(FCM::FCMListPtr pLibraryItemList, const PIFCMDictionary pDictPublishSettings);
     private:
 
         AutoPtr<IFrameCommandGenerator> m_frameCmdGeneratorService;

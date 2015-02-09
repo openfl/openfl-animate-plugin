@@ -1,5 +1,4 @@
 #include "Utils.h"
-#include <stdarg.h>
 
 #ifdef _WINDOWS
 #include "Windows.h"
