@@ -21,14 +21,33 @@
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
 //#include "xercesc/dom/DOMDocument.hpp"
+
+/*
+
 #include "xercesc/util/PlatformUtils.hpp"
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/framework/LocalFileFormatTarget.hpp"
-
 XERCES_CPP_NAMESPACE_USE
+*/
 
 namespace OpenFL
 {
+	
+
+	DOMElement* JSONOutputWriter::currScriptNode;
+
+	DOMElement* JSONOutputWriter::currFrameNode;
+
+	DOMImplementation *JSONOutputWriter::implementation;
+
+	XERCES_CPP_NAMESPACE::DOMDocument*        JSONOutputWriter::document;
+
+	DOMElement* JSONOutputWriter::currSymbolNode;
+
+	bool JSONOutputWriter::theNextFrameContainsScripts = false;
+
+
+
     static const std::string moveTo = "M";
     static const std::string lineTo = "L";
     static const std::string bezierCurveTo = "Q";
@@ -92,19 +111,12 @@ namespace OpenFL
 		//outputFileStream.open(exportDir + "scripts.xml");
 
 		XMLPlatformUtils::Initialize();
-		DOMImplementation *implementation = DOMImplementationRegistry::getDOMImplementation(XMLString::transcode("core"));
-		DOMDocument*        document = implementation->createDocument(0, L"symbols", 0);
-		DOMElement *pRoot = document->getDocumentElement();
-		DOMElement *pEle = document->createElement(L"symbol");
-		pRoot->appendChild(pEle);
+		implementation = DOMImplementationRegistry::getDOMImplementation(XMLString::transcode("core"));
+		document = implementation->createDocument(0, L"symbols", 0);
+		currSymbolNode = document->createElement(L"symbol");
+		
 
-		XMLFormatTarget *target = new LocalFileFormatTarget("C:/Users/Marko/Desktop/ExportTest/scripts.xml");
-		DOMLSSerializer *writer = implementation->createLSSerializer();
-		DOMConfiguration *config= writer->getDomConfig();
-		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
-		DOMLSOutput *destination = implementation->createLSOutput();
-		destination->setByteStream(target);
-		writer->write(document, destination);
+		
 
 		
 
@@ -153,6 +165,15 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::EndDocument()
     {
+
+		XMLFormatTarget *target = new LocalFileFormatTarget("C:/Users/Marko/Desktop/ExportTest/scripts.xml");
+		DOMLSSerializer *writer = implementation->createLSSerializer();
+		DOMConfiguration *config = writer->getDomConfig();
+		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
+		DOMLSOutput *destination = implementation->createLSOutput();
+		destination->setByteStream(target);
+		writer->write(document, destination);
+
         std::ofstream file;
 
         m_pRootNode->push_back(*m_pShapeArray);
@@ -202,7 +223,15 @@ namespace OpenFL
         m_pTimelineArray->push_back(*(pWriter->GetRoot()));
 
 		string idString = Utils::ToString(resId);
-		string nameString = Utils::ToString(pName, m_pCallback);
+		//char *idString = Utils::ToString(resId);
+		//string nameString = Utils::ToString(pName, m_pCallback);
+
+		
+
+
+		currSymbolNode->setAttribute(L"id", XMLString::transcode(idString.c_str()));
+		
+		currSymbolNode = JSONOutputWriter::document->createElement(L"symbol");
 
         return FCM_SUCCESS;
     }
@@ -1624,6 +1653,22 @@ namespace OpenFL
 
     FCM::Result JSONTimelineWriter::ShowFrame(FCM::U_Int32 frameNum)
     {
+		if (JSONOutputWriter::theNextFrameContainsScripts == true) {
+			JSONOutputWriter::currFrameNode->setAttribute(L"num",
+				XMLString::transcode(to_string(frameNum).c_str()));
+			JSONOutputWriter::currSymbolNode->appendChild(JSONOutputWriter::currFrameNode);
+			JSONOutputWriter::theNextFrameContainsScripts = false;
+		}
+
+
+/*
+
+		if (JSONOutputWriter::theNextFrameContainsScripts == true) {
+			JSONOutputWriter::currScriptNode->setAttribute(L"frameNum",
+				XMLString::transcode(to_string(frameNum).c_str());
+		}
+*/
+
         m_pFrameElement->push_back(JSONNode(("num"), OpenFL::Utils::ToString(frameNum)));
         m_pFrameElement->push_back(*m_pCommandArray);
         m_pFrameArray->push_back(*m_pFrameElement);
@@ -1646,7 +1691,34 @@ namespace OpenFL
     {
         std::string script = Utils::ToString(pScript, m_pCallback);
 
+		//curr
 		//outputFileStream << script;
+		if (JSONOutputWriter::theNextFrameContainsScripts == false) {
+			JSONOutputWriter::currFrameNode = JSONOutputWriter::document->createElement(L"frame");
+			JSONOutputWriter::theNextFrameContainsScripts = true;
+		}
+
+		//JSONOutputWriter::currSymbolNode = JSONOutputWriter::document->createElement(L"symbol"); // THIS SHOULD HAPPEN IN THE FUNCTION THAT HAPPENS EARLIER
+		JSONOutputWriter::document->getDocumentElement()->appendChild(JSONOutputWriter::currSymbolNode); // THIS ALSO
+
+		DOMElement *scriptElem = JSONOutputWriter::document->createElement(L"script");
+		scriptElem->setAttribute(L"layer", XMLString::transcode(to_string(layerNum).c_str()));
+		DOMCDATASection *cdataNode = JSONOutputWriter::document->createCDATASection(
+			XMLString::transcode(script.c_str()));
+		
+		//scriptElem->setTextContent(XMLString::transcode(("<![CDATA[\n" + script + "\n]]>").c_str()));
+
+		//cdataNode->setTextContent(XMLString::transcode(script.c_str()));
+		scriptElem->appendChild(cdataNode);
+
+		//scriptElem->setUserData
+		//scriptElem->setNodeValue(XMLString::transcode(script.c_str()));
+		//scriptElem->setAttribute(L"content", XMLString::transcode(script.c_str()));
+		
+		
+		JSONOutputWriter::currFrameNode->appendChild(scriptElem);
+
+		
 
         std::string scriptWithLayerNumber = "script Layer" +  Utils::ToString(layerNum);
 

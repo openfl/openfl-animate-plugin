@@ -328,7 +328,7 @@ namespace OpenFL
                 return res;
             }
 
-            //ExportLibraryItems(pLibraryItemList, pDictPublishSettings);
+			ExportLibraryItems(pLibraryItemList);
         }
         else
         {
@@ -353,10 +353,10 @@ namespace OpenFL
             ((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
 
             res = pOutputWriter->EndDocument();
-            ASSERT(FCM_SUCCESS_CODE(res));
+            //ASSERT(FCM_SUCCESS_CODE(res));
 
             res = pOutputWriter->EndOutput();
-            ASSERT(FCM_SUCCESS_CODE(res));
+            //ASSERT(FCM_SUCCESS_CODE(res));
         }
 
         if (IsPreviewNeeded(pDictConfig))
@@ -864,6 +864,8 @@ namespace OpenFL
 
                     if (pSymbolItem)
                     {
+
+						/*
 						Utils::Trace(GetCallback(), "Entered  if (pSymbolItem)\n");
                         //
                         // Check if it has been exported already by comparing names of resources 
@@ -896,7 +898,7 @@ namespace OpenFL
 						range.max -= 1;
 
 
-
+						*/
 						//m_frameCmdGeneratorService->GenerateFrameCommands(symbolTimeline, range, 
 						
 
