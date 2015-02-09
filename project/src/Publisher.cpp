@@ -115,261 +115,259 @@ namespace OpenFL
 #define USE_ORIGINAL_EXPORT
 
 #ifdef USE_ORIGINAL_EXPORT
-    FCM::Result CPublisher::Export(
-        DOM::PIFLADocument pFlaDocument, 
-        DOM::PITimeline pTimeline, 
-        const Exporter::Service::RANGE* pFrameRange, 
-        const PIFCMDictionary pDictPublishSettings, 
-        const PIFCMDictionary pDictConfig)
-    {
-        std::string outFile;
-        FCM::Result res;
-        FCM::FCMGUID guid;
-        FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
-        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
+	FCM::Result CPublisher::Export(
+		DOM::PIFLADocument pFlaDocument,
+		DOM::PITimeline pTimeline,
+		const Exporter::Service::RANGE* pFrameRange,
+		const PIFCMDictionary pDictPublishSettings,
+		const PIFCMDictionary pDictConfig)
+	{
+		std::string outFile;
+		FCM::Result res;
+		FCM::FCMGUID guid;
+		FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
+		FCM::AutoPtr<FCM::IFCMCalloc> pCalloc;
 
-        Init();
+		Init();
 
-        pCalloc = OpenFL::Utils::GetCallocService(GetCallback());
-        ASSERT(pCalloc.m_Ptr != NULL);
+		pCalloc = OpenFL::Utils::GetCallocService(GetCallback());
+		ASSERT(pCalloc.m_Ptr != NULL);
 
-        res = pFlaDocument->GetTypeId(guid);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		res = pFlaDocument->GetTypeId(guid);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        std::string pub_guid = Utils::ToString(guid);
-        Utils::Trace(GetCallback(), "Publishing begins for document with GUID: %s\n", 
-            pub_guid.c_str());
+		std::string pub_guid = Utils::ToString(guid);
+		Utils::Trace(GetCallback(), "Publishing begins for document with GUID: %s\n",
+			pub_guid.c_str());
 
-        res = GetOutputFileName(pFlaDocument, pTimeline, pDictPublishSettings, outFile);
-        if (FCM_FAILURE_CODE(res))
-        {
-            // FLA is untitled. Ideally, we should use a temporary location for output generation.
-            // However, for now, we report an error.
-            Utils::Trace(GetCallback(), "Failed to publish. Either save the FLA or provide output path in publish settings.\n");
-            return res;
-        }
+		res = GetOutputFileName(pFlaDocument, pTimeline, pDictPublishSettings, outFile);
+		if (FCM_FAILURE_CODE(res))
+		{
+			// FLA is untitled. Ideally, we should use a temporary location for output generation.
+			// However, for now, we report an error.
+			Utils::Trace(GetCallback(), "Failed to publish. Either save the FLA or provide output path in publish settings.\n");
+			return res;
+		}
 
-        Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
-		Utils::Trace(GetCallback(), "MYTRACE\n");
-#undef USE_SWF_EXPORTER_SERVICE
+		Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
 #ifdef USE_SWF_EXPORTER_SERVICE
-		Utils::Trace(GetCallback(), "Trace inside USE_SWF_EXPORTER_SERVICE\n");
-        // Use the SWF Exporter Service to export to a SWF
-		
-        res = GetCallback()->GetService(Exporter::Service::EXPORTER_SWF_SERVICE, pUnk.m_Ptr);
-        if (FCM_FAILURE_CODE(res))
-        {
-            return res;
-        }
-		
-        FCM::StringRep16 outputFilePath = Utils::ToString16(outFile, GetCallback());
+#undef USE_SWF_EXPORTER_SERVICE
+#endif
+#ifdef USE_SWF_EXPORTER_SERVICE
 
-        FCM::AutoPtr<Exporter::Service::ISWFExportService> pSWfExportService = pUnk;
+		// Use the SWF Exporter Service to export to a SWF
 
-        if (!pTimeline)
-        {
-            // Export complete document
-            res = pSWfExportService->ExportToFile(pFlaDocument, outputFilePath);
-        }
-        else
-        {
-            // Export only specified timeline
-            res = pSWfExportService->ExportToFile(pTimeline, outputFilePath);
-        }
-        pCalloc->Free(outputFilePath);
-        if (FCM_SUCCESS_CODE(res))
-        {
-            return res;
-        }
-		
+		res = GetCallback()->GetService(Exporter::Service::EXPORTER_SWF_SERVICE, pUnk.m_Ptr);
+		if (FCM_FAILURE_CODE(res))
+		{
+			return res;
+		}
+
+		FCM::StringRep16 outputFilePath = Utils::ToString16(outFile, GetCallback());
+
+		FCM::AutoPtr<Exporter::Service::ISWFExportService> pSWfExportService = pUnk;
+
+		if (!pTimeline)
+		{
+			// Export complete document
+			res = pSWfExportService->ExportToFile(pFlaDocument, outputFilePath);
+		}
+		else
+		{
+			// Export only specified timeline
+			res = pSWfExportService->ExportToFile(pTimeline, outputFilePath);
+		}
+		pCalloc->Free(outputFilePath);
+		if (FCM_SUCCESS_CODE(res))
+		{
+			return res;
+		}
+
 		// Post-process the SWF
 
 #else
-		Utils::Trace(GetCallback(), "Trace inside #else\n");
-        DOM::Utils::COLOR color;
-        FCM::U_Int32 stageHeight;
-        FCM::U_Int32 stageWidth;
-        FCM::Double fps;
-        FCM::U_Int32 framesPerSec;
-        AutoPtr<ITimelineBuilderFactory> pTimelineBuilderFactory;
-        FCM::FCMListPtr pTimelineList;
-        FCM::U_Int32 timelineCount;
+		DOM::Utils::COLOR color;
+		FCM::U_Int32 stageHeight;
+		FCM::U_Int32 stageWidth;
+		FCM::Double fps;
+		FCM::U_Int32 framesPerSec;
+		AutoPtr<ITimelineBuilderFactory> pTimelineBuilderFactory;
+		FCM::FCMListPtr pTimelineList;
+		FCM::U_Int32 timelineCount;
 
-        // Create a output writer
+		// Create a output writer
 		std::auto_ptr<IOutputWriter> pOutputWriter(new JSONOutputWriter(GetCallback()));
-		//std::auto_ptr<IOutputWriter> pOutputWriter(new OpenFLOutputWriter(GetCallback()));
-        if (pOutputWriter.get() == NULL)
-        {
-            return FCM_MEM_NOT_AVAILABLE;
-        }
-        
-        // Start output
-        pOutputWriter->StartOutput(outFile);
+		if (pOutputWriter.get() == NULL)
+		{
+			return FCM_MEM_NOT_AVAILABLE;
+		}
 
-        // Create a Timeline Builder Factory for the root timeline of the document
-        res = GetCallback()->CreateInstance(
-            NULL, 
-            CLSID_TimelineBuilderFactory, 
-            IID_ITimelineBuilderFactory, 
-            (void**)&pTimelineBuilderFactory);
-        if (FCM_FAILURE_CODE(res))
-        {
-            return res;
-        }
+		// Start output
+		pOutputWriter->StartOutput(outFile);
 
-        (static_cast<TimelineBuilderFactory*>(pTimelineBuilderFactory.m_Ptr))->Init(
-            pOutputWriter.get());
+		// Create a Timeline Builder Factory for the root timeline of the document
+		res = GetCallback()->CreateInstance(
+			NULL,
+			CLSID_TimelineBuilderFactory,
+			IID_ITimelineBuilderFactory,
+			(void**)&pTimelineBuilderFactory);
+		if (FCM_FAILURE_CODE(res))
+		{
+			return res;
+		}
 
-        ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
-        pResPalette->Clear();
-        pResPalette->Init(pOutputWriter.get());
+		(static_cast<TimelineBuilderFactory*>(pTimelineBuilderFactory.m_Ptr))->Init(
+			pOutputWriter.get());
 
-        res = pFlaDocument->GetBackgroundColor(color);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
+		pResPalette->Clear();
+		pResPalette->Init(pOutputWriter.get());
 
-        res = pFlaDocument->GetStageHeight(stageHeight);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		res = pFlaDocument->GetBackgroundColor(color);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        res = pFlaDocument->GetStageWidth(stageWidth);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		res = pFlaDocument->GetStageHeight(stageHeight);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        res = pFlaDocument->GetFrameRate(fps);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		res = pFlaDocument->GetStageWidth(stageWidth);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        framesPerSec = (FCM::U_Int32)fps;
+		res = pFlaDocument->GetFrameRate(fps);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        res = pOutputWriter->StartDocument(color, stageHeight, stageWidth, framesPerSec);
-        ASSERT(FCM_SUCCESS_CODE(res));
-		Utils::Trace(GetCallback(), "Trace before if\n");
-        // Export complete document ?
-        if (!pTimeline)
-        {
-			Utils::Trace(GetCallback(), "Trace inside if\n");
-            // Get all the timelines for the document
-            res = pFlaDocument->GetTimelines(pTimelineList.m_Ptr);
-            if (FCM_FAILURE_CODE(res))
-            {
-                return res;
-            }
+		framesPerSec = (FCM::U_Int32)fps;
 
-            res = pTimelineList->Count(timelineCount);
-            if (FCM_FAILURE_CODE(res))
-            {
-                return res;
-            }
+		res = pOutputWriter->StartDocument(color, stageHeight, stageWidth, framesPerSec);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-            /*
-             * IMPORTANT NOTE: 
-             *  
-             * For the current sample plugin, multiple scene export is not supported.
-             * Supporting export of multiple scene is little tricky. This is due to
-             * the fact that IFrameCommandGenerator::GenerateFrameCommands() expects
-             * that a new empty resource palette is passed for each timeline.
-             *
-             * In other words, for each timeline (scene), a resource palette is exported.
-             * So, if a resource is present in 2 scenes, its definition will be replicated 
-             * in both the resource palettes. Plugin can choose to optimize by comparing the
-             * resource names to find the common resources and put it in a global resource 
-             * palette and also modifying the timeline builder commands to use the new 
-             * resource ids.
-             *
-             * For our current implementation, we chosen to keep it simple and not support
-             * multiple scenes. For this plugin to work, the feature "Scene" must be disabled 
-             * by the corresponding DocType.
-             */
-            ASSERT(timelineCount == 1);
+		// Export complete document ?
+		if (!pTimeline)
+		{
+			// Get all the timelines for the document
+			res = pFlaDocument->GetTimelines(pTimelineList.m_Ptr);
+			if (FCM_FAILURE_CODE(res))
+			{
+				return res;
+			}
 
-            // Generate frame commands for each timeline
-            for (FCM::U_Int32 i = 0; i < timelineCount; i++)
-            {
-                Exporter::Service::RANGE range;
-                AutoPtr<ITimelineBuilder> pTimelineBuilder;
-                ITimelineWriter* pTimelineWriter;
+			res = pTimelineList->Count(timelineCount);
+			if (FCM_FAILURE_CODE(res))
+			{
+				return res;
+			}
 
-                AutoPtr<DOM::ITimeline> timeline = pTimelineList[i];
+			/*
+			* IMPORTANT NOTE:
+			*
+			* For the current sample plugin, multiple scene export is not supported.
+			* Supporting export of multiple scene is little tricky. This is due to
+			* the fact that IFrameCommandGenerator::GenerateFrameCommands() expects
+			* that a new empty resource palette is passed for each timeline.
+			*
+			* In other words, for each timeline (scene), a resource palette is exported.
+			* So, if a resource is present in 2 scenes, its definition will be replicated
+			* in both the resource palettes. Plugin can choose to optimize by comparing the
+			* resource names to find the common resources and put it in a global resource
+			* palette and also modifying the timeline builder commands to use the new
+			* resource ids.
+			*
+			* For our current implementation, we chosen to keep it simple and not support
+			* multiple scenes. For this plugin to work, the feature "Scene" must be disabled
+			* by the corresponding DocType.
+			*/
+			ASSERT(timelineCount == 1);
 
-                range.min = 0;
-                res = timeline->GetMaxFrameCount(range.max);
-                if (FCM_FAILURE_CODE(res))
-                {
-                    return res;
-                }
+			// Generate frame commands for each timeline
+			for (FCM::U_Int32 i = 0; i < timelineCount; i++)
+			{
+				Exporter::Service::RANGE range;
+				AutoPtr<ITimelineBuilder> pTimelineBuilder;
+				ITimelineWriter* pTimelineWriter;
 
-                range.max--;
+				AutoPtr<DOM::ITimeline> timeline = pTimelineList[i];
 
-                // Generate frame commands
-                res = m_frameCmdGeneratorService->GenerateFrameCommands(
-                    timeline, 
-                    range, 
-                    pDictPublishSettings,
-                    m_pResourcePalette, 
-                    pTimelineBuilderFactory, 
-                    pTimelineBuilder.m_Ptr);
+				range.min = 0;
+				res = timeline->GetMaxFrameCount(range.max);
+				if (FCM_FAILURE_CODE(res))
+				{
+					return res;
+				}
 
-                if (FCM_FAILURE_CODE(res))
-                {
-                    return res;
-                }
+				range.max--;
 
-                ((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
-            }
+				// Generate frame commands
+				res = m_frameCmdGeneratorService->GenerateFrameCommands(
+					timeline,
+					range,
+					pDictPublishSettings,
+					m_pResourcePalette,
+					pTimelineBuilderFactory,
+					pTimelineBuilder.m_Ptr);
 
-            res = pOutputWriter->EndDocument();
-            ASSERT(FCM_SUCCESS_CODE(res));
+				if (FCM_FAILURE_CODE(res))
+				{
+					return res;
+				}
 
-            res = pOutputWriter->EndOutput();
-            ASSERT(FCM_SUCCESS_CODE(res));
+				((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
+			}
 
-            // Export the library items with linkages
-            FCM::FCMListPtr pLibraryItemList;
-            res = pFlaDocument->GetLibraryItems(pLibraryItemList.m_Ptr);
-            if (FCM_FAILURE_CODE(res))
-            {
-                return res;
-            }
+			res = pOutputWriter->EndDocument();
+			ASSERT(FCM_SUCCESS_CODE(res));
+
+			res = pOutputWriter->EndOutput();
+			ASSERT(FCM_SUCCESS_CODE(res));
+
+			// Export the library items with linkages
+			FCM::FCMListPtr pLibraryItemList;
+			res = pFlaDocument->GetLibraryItems(pLibraryItemList.m_Ptr);
+			if (FCM_FAILURE_CODE(res))
+			{
+				return res;
+			}
 
 			ExportLibraryItems(pLibraryItemList);
-        }
-        else
-        {
-            // Export a timeline
-            AutoPtr<ITimelineBuilder> pTimelineBuilder;
-            ITimelineWriter* pTimelineWriter;
+		}
+		else
+		{
+			// Export a timeline
+			AutoPtr<ITimelineBuilder> pTimelineBuilder;
+			ITimelineWriter* pTimelineWriter;
 
-            // Generate frame commands
-            res = m_frameCmdGeneratorService->GenerateFrameCommands(
-                pTimeline, 
-                *pFrameRange, 
-                pDictPublishSettings,
-                m_pResourcePalette, 
-                pTimelineBuilderFactory, 
-                pTimelineBuilder.m_Ptr);
+			// Generate frame commands
+			res = m_frameCmdGeneratorService->GenerateFrameCommands(
+				pTimeline,
+				*pFrameRange,
+				pDictPublishSettings,
+				m_pResourcePalette,
+				pTimelineBuilderFactory,
+				pTimelineBuilder.m_Ptr);
 
-            if (FCM_FAILURE_CODE(res))
-            {
-                return res;
-            }
+			if (FCM_FAILURE_CODE(res))
+			{
+				return res;
+			}
 
-            ((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
+			((TimelineBuilder*)pTimelineBuilder.m_Ptr)->Build(0, NULL, &pTimelineWriter);
 
-            res = pOutputWriter->EndDocument();
-            //ASSERT(FCM_SUCCESS_CODE(res));
+			res = pOutputWriter->EndDocument();
+			ASSERT(FCM_SUCCESS_CODE(res));
 
-            res = pOutputWriter->EndOutput();
-            //ASSERT(FCM_SUCCESS_CODE(res));
-        }
+			res = pOutputWriter->EndOutput();
+			ASSERT(FCM_SUCCESS_CODE(res));
+		}
 
-        if (IsPreviewNeeded(pDictConfig))
-        {
-            // Launch the browser
-            std::string fileName;
-            Utils::GetFileName(outFile, fileName);
-            LaunchBrowser(fileName);
-        }
+		if (IsPreviewNeeded(pDictConfig))
+		{
+			// Launch the browser
+			std::string fileName;
+			Utils::GetFileName(outFile, fileName);
+			LaunchBrowser(fileName);
+		}
 
 #endif
-        return FCM_SUCCESS;
-    }
+		return FCM_SUCCESS;
+	}
 
 
 #endif
@@ -789,191 +787,106 @@ namespace OpenFL
     // Note: This function is NOT completely implemented but provides guidelines 
     // on how this can be possibly done.      
     //
-    FCM::Result CPublisher::ExportLibraryItems(FCM::FCMListPtr pLibraryItemList)
-    {
-		Utils::Trace(GetCallback(), "Entered ExportLibraryItems()\n");
-        FCM::U_Int32 count = 0;
-        FCM::Result res;
+	FCM::Result CPublisher::ExportLibraryItems(FCM::FCMListPtr pLibraryItemList)
+	{
+		FCM::U_Int32 count = 0;
+		FCM::Result res;
 
 
-        ASSERT(pLibraryItemList);
+		ASSERT(pLibraryItemList);
 
-        res = pLibraryItemList->Count(count);
-        ASSERT(FCM_SUCCESS_CODE(res));
+		res = pLibraryItemList->Count(count);
+		ASSERT(FCM_SUCCESS_CODE(res));
 
-        FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
-        res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
-        AutoPtr<FCM::IFCMCalloc> callocService  = pUnkCalloc;
+		FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
+		res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
+		AutoPtr<FCM::IFCMCalloc> callocService = pUnkCalloc;
 
-		ofstream scriptsStream;
-		std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/"; // TODO: get a relative path
-		scriptsStream.open(exportDir + "scripts.xml");
+		for (FCM::U_Int32 index = 0; index < count; index++)
+		{
+			FCM::StringRep16 pLibItemName = NULL;
+			std::string libItemName;
+			AutoPtr<IFCMDictionary> pDict;
+			AutoPtr<DOM::ILibraryItem> pLibItem = pLibraryItemList[index];
 
+			res = pLibItem->GetName(&pLibItemName);
+			ASSERT(FCM_SUCCESS_CODE(res));
+			libItemName = Utils::ToString(pLibItemName, GetCallback());
 
-        for (FCM::U_Int32 index = 0; index < count ; index++)
-        {
-			Utils::Trace(GetCallback(), "Entered for\n");
-            FCM::StringRep16 pLibItemName = NULL;
-            std::string libItemName;
-            AutoPtr<IFCMDictionary> pDict;
-            AutoPtr<DOM::ILibraryItem> pLibItem = pLibraryItemList[index];
+			AutoPtr<DOM::LibraryItem::IFolderItem> pFolderItem = pLibItem;
+			if (pFolderItem)
+			{
+				FCM::FCMListPtr pChildren;
 
-            res = pLibItem->GetName(&pLibItemName);
-			
-            ASSERT(FCM_SUCCESS_CODE(res));
-            libItemName = Utils::ToString(pLibItemName, GetCallback());
+				res = pFolderItem->GetChildren(pChildren.m_Ptr);
+				ASSERT(FCM_SUCCESS_CODE(res));
 
-			//FCM::Result resBaseClassName = pLibItem->GetProperties();
+				// Export all its children
+				res = ExportLibraryItems(pChildren);
+				ASSERT(FCM_SUCCESS_CODE(res));
+			}
+			else
+			{
+				FCM::FCMDictRecTypeID type;
+				FCM::U_Int32 valLen;
+				AutoPtr<DOM::LibraryItem::IFontItem> pFontItem = pLibItem;
+				AutoPtr<DOM::LibraryItem::ISymbolItem> pSymbolItem = pLibItem;
+				AutoPtr<DOM::LibraryItem::IMediaItem> pMediaItem = pLibItem;
 
-            AutoPtr<DOM::LibraryItem::IFolderItem> pFolderItem = pLibItem;
-            if (pFolderItem)
-            {
-                FCM::FCMListPtr pChildren;
+				res = pLibItem->GetProperties(pDict.m_Ptr);
+				ASSERT(FCM_SUCCESS_CODE(res));
 
-                res = pFolderItem->GetChildren(pChildren.m_Ptr);
-                ASSERT(FCM_SUCCESS_CODE(res));
+				res = pDict->GetInfo(kLibProp_LinkageClass_DictKey,
+					type, valLen);
 
-                // Export all its children
-                res = ExportLibraryItems(pChildren);
-                ASSERT(FCM_SUCCESS_CODE(res));
-            }
-            else
-            {
-                FCM::FCMDictRecTypeID type;
-                FCM::U_Int32 valLen;
-                AutoPtr<DOM::LibraryItem::IFontItem> pFontItem = pLibItem;
-                AutoPtr<DOM::LibraryItem::ISymbolItem> pSymbolItem = pLibItem;
-                AutoPtr<DOM::LibraryItem::IMediaItem> pMediaItem = pLibItem;
-				
-				
-				
-			
+				if (FCM_SUCCESS_CODE(res))
+				{
+					FCM::Boolean hasResource;
+					ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
 
-                res = pLibItem->GetProperties(pDict.m_Ptr);
-                ASSERT(FCM_SUCCESS_CODE(res));
+					// Library Item has linkage identifer
 
-                res = pDict->GetInfo(kLibProp_LinkageClass_DictKey, 
-                    type, valLen);
+					if (pSymbolItem)
+					{
+						//
+						// Check if it has been exported already by comparing names of resources 
+						// already exported from the timelines.
+						//
+						res = pResPalette->HasResource(libItemName, hasResource);
+						if (!hasResource)
+						{
+							// Resource is not yet exported. Export it using 
+							// FrameCommandGenerator::GenerateFrameCommands
+						}
+					}
+					else if (pMediaItem)
+					{
+						//
+						// Check if it has been exported already by comparing names of resources 
+						// already exported from the timelines.
+						//
+						res = pResPalette->HasResource(libItemName, hasResource);
+						if (!hasResource)
+						{
+							// Resource is not yet exported. Export it.
 
-                if (FCM_SUCCESS_CODE(res))
-                {
-                    FCM::Boolean hasResource;
-                    ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
+							// Depending on bitmap/sound, export it.
+						}
+					}
+					else if (pFontItem)
+					{
+						// Use the font name to check if already exported.
 
-                    // Library Item has linkage identifer
+						// Use IFontTableGeneratorService::CreateFontTableForFontItem() to create 
+						// a font table and then export it.
+					}
+				}
+			}
 
-                    if (pSymbolItem)
-                    {
-
-						/*
-						Utils::Trace(GetCallback(), "Entered  if (pSymbolItem)\n");
-                        //
-                        // Check if it has been exported already by comparing names of resources 
-                        // already exported from the timelines.
-                        //
-						
-						FCM::Result resBaseClassName = pDict->GetInfo(kLibProp_LinkageBaseClass_DictKey, type, valLen);
-						
-						ASSERT(FCM_SUCCESS_CODE(resBaseClassName));
-						//std::string symbolName;
-						std::string className;
-						std::string baseClassName;
-						//string symbolID;
-						string symbolID;
-						ReadString(pDict, kLibProp_LinkageClass_DictKey, className);
-						ReadString(pDict, kLibProp_LinkageBaseClass_DictKey, baseClassName);
-						ReadString(pDict, kLibProp_LinkageIdentifier_DictKey, symbolID);
-						//FCM::StringRep16 pBaseClassName = NULL;
-						//baseClassName = Utils::ToString(pBaseClassName, GetCallback());
-						Utils::Trace(GetCallback(), "Symbol: %s %s %s\n", libItemName, className, baseClassName);
-						
-						//scriptsStream << pLibItem->GetIID();
-						scriptsStream << symbolID;
-						DOM::PITimeline symbolTimeline;
-						pSymbolItem->GetTimeLine(symbolTimeline);
-						
-						RANGE range;
-						range.min = 0;
-						symbolTimeline->GetMaxFrameCount(range.max);
-						range.max -= 1;
-
-
-						*/
-						//m_frameCmdGeneratorService->GenerateFrameCommands(symbolTimeline, range, 
-						
-
-						/*
-						std::ofstream symbolClassFile;
-						std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/";
-						//std::string package = className.replace(package.begin(), package.end(), ".", "/");
-						std::string package = className;
-						std::replace(package.begin(), package.end(), '.', '/');
-						//flexidevs/reusable/
-						package = regex_replace(package, regex("(.*)/(.*)"), "$1/");
-						//create_directories(path + package);
-						create_directories(path(exportDir + package));
-						directory_iterator dirIt(path("."));
-						string absolutePath = complete(path("."));
-						//createFileFromSymbol()
-						symbolClassFile.open(exportDir + package + libItemName + ".hx");
-						symbolClassFile << "class " << libItemName << " extends " << baseClassName;
-						symbolClassFile.close();
-						*/
-
-						/*
-						char *traceString;
-						std::sprintf(traceString, "Symbol: %s %s", libItemName, baseClassName);
-						
-						Utils::Trace(GetCallback(), traceString);
-						*/
-
-						/*
-                        res = pResPalette->HasResource(libItemName, hasResource);
-                        if (!hasResource)
-                        {
-							Utils::Trace(GetCallback(), "Entered if (!hasResource)\n");
-                            // Resource is not yet exported. Export it using 
-                            // FrameCommandGenerator::GenerateFrameCommands
-							
-							
-
-							
-							
-							
-                        }
-						*/
-                    }
-                    else if (pMediaItem)
-                    {
-                        //
-                        // Check if it has been exported already by comparing names of resources 
-                        // already exported from the timelines.
-                        //
-                        res = pResPalette->HasResource(libItemName, hasResource);
-                        if (!hasResource)
-                        {
-                            // Resource is not yet exported. Export it.
-
-                            // Depending on bitmap/sound, export it.
-                        }
-                    }
-                    else if (pFontItem)
-                    {
-                        // Use the font name to check if already exported.
-                        
-                        // Use IFontTableGeneratorService::CreateFontTableForFontItem() to create 
-                        // a font table and then export it.
-                    }
-                }
-            }
-
-            callocService->Free((FCM::PVoid)pLibItemName);
-        }
-
-		scriptsStream.close();
-
-        return FCM_SUCCESS;
-    }
+			callocService->Free((FCM::PVoid)pLibItemName);
+		}
+		return FCM_SUCCESS;
+	}
 
     /* ----------------------------------------------------- Resource Palette */
 

@@ -166,13 +166,35 @@ namespace OpenFL
     FCM::Result JSONOutputWriter::EndDocument()
     {
 
+		//FileHandle fileH = XMLPlatformUtils::openFileToWrite(L"C:/Users/Marko/Desktop/ExportTest/scripts.xml");
+		
+
+
+
 		XMLFormatTarget *target = new LocalFileFormatTarget("C:/Users/Marko/Desktop/ExportTest/scripts.xml");
 		DOMLSSerializer *writer = implementation->createLSSerializer();
 		DOMConfiguration *config = writer->getDomConfig();
 		config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
-		DOMLSOutput *destination = implementation->createLSOutput();
-		destination->setByteStream(target);
-		writer->write(document, destination);
+		DOMLSOutput *output = implementation->createLSOutput();
+		
+		output->setByteStream(target);
+		writer->write(document, output);
+		//XMLPlatformUtils::closeFile(target);
+		output->release();
+		output = nullptr;
+		writer->release();
+		writer = nullptr;
+		document->release();
+		//currSymbolNode->release();
+		//currFrameNode->release();
+		//currScriptNode->release();
+		delete target;
+		implementation = nullptr;
+
+
+
+		//XMLPlatformUtils::closeFile(fileH);
+
 
         std::ofstream file;
 
