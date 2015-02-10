@@ -151,10 +151,8 @@ namespace OpenFL
 		}
 
 		Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
-#ifdef USE_SWF_EXPORTER_SERVICE
-#undef USE_SWF_EXPORTER_SERVICE
-#endif
-#ifdef USE_SWF_EXPORTER_SERVICE
+
+//#ifdef USE_SWF_EXPORTER_SERVICE
 
 		// Use the SWF Exporter Service to export to a SWF
 
@@ -186,7 +184,7 @@ namespace OpenFL
 
 		// Post-process the SWF
 
-#else
+//#else
 		DOM::Utils::COLOR color;
 		FCM::U_Int32 stageHeight;
 		FCM::U_Int32 stageWidth;
@@ -329,6 +327,7 @@ namespace OpenFL
 			}
 
 			ExportLibraryItems(pLibraryItemList);
+
 		}
 		else
 		{
@@ -357,6 +356,9 @@ namespace OpenFL
 
 			res = pOutputWriter->EndOutput();
 			ASSERT(FCM_SUCCESS_CODE(res));
+
+			
+
 		}
 
 		if (IsPreviewNeeded(pDictConfig))
@@ -367,7 +369,7 @@ namespace OpenFL
 			LaunchBrowser(fileName);
 		}
 
-#endif
+//#endif
 		return FCM_SUCCESS;
 	}
 
