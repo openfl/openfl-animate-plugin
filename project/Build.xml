@@ -33,6 +33,7 @@
 		<file name="src/Main.cpp" />
 		<file name="src/MyXmlParser.cpp" />
 		<file name="src/OutputWriter.cpp" />
+		<file name="src/ScriptOutputWriter.cpp" />
 		<file name="src/Publisher.cpp" />
 		<file name="src/Utils.cpp" />
 		

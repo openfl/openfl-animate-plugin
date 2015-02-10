@@ -53,6 +53,7 @@
 #include "Utils/IRadialColorGradient.h"
 
 #include "OutputWriter.h"
+#include "ScriptOutputWriter.h"
 
 #include "Exporter/Service/IResourcePalette.h"
 #include "Exporter/Service/ITimelineBuilder.h"
@@ -196,7 +197,8 @@ namespace OpenFL
 		FCM::U_Int32 timelineCount;
 
 		// Create a output writer
-		std::auto_ptr<IOutputWriter> pOutputWriter(new JSONOutputWriter(GetCallback()));
+		//std::auto_ptr<IOutputWriter> pOutputWriter(new JSONOutputWriter(GetCallback()));
+		std::auto_ptr<IOutputWriter> pOutputWriter(new OpenFLOutputWriter(GetCallback()));
 		if (pOutputWriter.get() == NULL)
 		{
 			return FCM_MEM_NOT_AVAILABLE;
@@ -2169,8 +2171,8 @@ namespace OpenFL
 
         m_pOutputWriter->StartDefineTimeline();
 
-		m_pTimelineWriter = new JSONTimelineWriter(GetCallback());
-		//m_pTimelineWriter = new OpenFLTimelineWriter(GetCallback());
+		//m_pTimelineWriter = new JSONTimelineWriter(GetCallback());
+		m_pTimelineWriter = new OpenFLTimelineWriter(GetCallback());
 
         ASSERT(m_pTimelineWriter);
     }
