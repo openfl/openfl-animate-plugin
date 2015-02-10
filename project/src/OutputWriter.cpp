@@ -107,8 +107,9 @@ namespace OpenFL
     FCM::Result JSONOutputWriter::StartOutput(std::string& outputFileName)
     {
 
-		std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/"; // TODO: get a relative path
-		//outputFileStream.open(exportDir + "scripts.xml");
+		//std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/"; // TODO: get a relative path
+		string exportDir;
+		Utils::GetParent(outputFileName, exportDir);
 
 		XMLPlatformUtils::Initialize();
 		implementation = DOMImplementationRegistry::getDOMImplementation(XMLString::transcode("core"));
