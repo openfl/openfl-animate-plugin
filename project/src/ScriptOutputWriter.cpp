@@ -24,17 +24,5 @@
 
 namespace OpenFL
 {
-
-	DOMElement* ScriptOutputWriter::currScriptNode;
-
-	DOMElement* ScriptOutputWriter::currFrameNode;
-
-	DOMImplementation *ScriptOutputWriter::implementation;
-
-	XERCES_CPP_NAMESPACE::DOMDocument*        ScriptOutputWriter::document;
-
-	DOMElement* ScriptOutputWriter::currSymbolNode;
-
-	bool ScriptOutputWriter::theNextFrameContainsScripts = false;
-
+	//bool theNextFrameContainsScripts = false;
 };

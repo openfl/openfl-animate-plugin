@@ -17,31 +17,32 @@ XERCES_CPP_NAMESPACE_USE
 
 namespace OpenFL {
 
+	static string exportDir;
+
+	static DOMElement* currSymbolNode;
+
+	static DOMElement* currScriptNode;
+
+	static DOMElement* currFrameNode;
+
+	static DOMImplementation *implementation;
+
+	static XERCES_CPP_NAMESPACE::DOMDocument*        document;
+
+	static bool theNextFrameContainsScripts;
+
 	class ScriptOutputWriter : public IOutputWriter
 	{
 	public:
-
-		static DOMElement* currSymbolNode;
-
-		static DOMElement* currScriptNode;
-
-		static DOMElement* currFrameNode;
-
-		static DOMImplementation *implementation;
-
-		static XERCES_CPP_NAMESPACE::DOMDocument*        document;
-
-		static bool theNextFrameContainsScripts;
-
 		// Marks the begining of the output
 		FCM::Result StartOutput(std::string& outputFileName) {
-			string exportDir;
 			Utils::GetParent(outputFileName, exportDir);
 
 			XMLPlatformUtils::Initialize();
 			implementation = DOMImplementationRegistry::getDOMImplementation(XMLString::transcode("core"));
 			document = implementation->createDocument(0, L"symbols", 0);
 			currSymbolNode = document->createElement(L"symbol");
+			theNextFrameContainsScripts = false;
 			return FCM_SUCCESS;
 		}
 
@@ -61,7 +62,7 @@ namespace OpenFL {
 
 		// Marks the end of the Document
 		FCM::Result EndDocument() {
-			XMLFormatTarget *target = new LocalFileFormatTarget("C:/Users/Marko/Desktop/ExportTest/scripts.xml");
+			XMLFormatTarget *target = new LocalFileFormatTarget((exportDir + "/scripts.xml").c_str());
 			DOMLSSerializer *writer = implementation->createLSSerializer();
 			DOMConfiguration *config = writer->getDomConfig();
 			config->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
@@ -91,7 +92,7 @@ namespace OpenFL {
 			ITimelineWriter* pTimelineWriter) {
 			string idString = Utils::ToString(resId);
 			currSymbolNode->setAttribute(L"id", XMLString::transcode(idString.c_str()));
-			currSymbolNode = ScriptOutputWriter::document->createElement(L"symbol");
+			currSymbolNode = document->createElement(L"symbol");
 			return FCM_SUCCESS;
 		}
 
@@ -343,11 +344,11 @@ namespace OpenFL {
 		}
 
 		FCM::Result ShowFrame(FCM::U_Int32 frameNum) {
-			if (ScriptOutputWriter::theNextFrameContainsScripts == true) {
-				ScriptOutputWriter::currFrameNode->setAttribute(L"num",
+			if (theNextFrameContainsScripts == true) {
+				currFrameNode->setAttribute(L"num",
 					XMLString::transcode(to_string(frameNum).c_str()));
-				ScriptOutputWriter::currSymbolNode->appendChild(ScriptOutputWriter::currFrameNode);
-				ScriptOutputWriter::theNextFrameContainsScripts = false;
+				currSymbolNode->appendChild(currFrameNode);
+				theNextFrameContainsScripts = false;
 			}
 			return FCM_SUCCESS;
 		}
@@ -355,20 +356,20 @@ namespace OpenFL {
 		FCM::Result AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum) {
 			std::string script = Utils::ToString(pScript, m_pCallback);
 
-			if (ScriptOutputWriter::theNextFrameContainsScripts == false) {
-				ScriptOutputWriter::currFrameNode = ScriptOutputWriter::document->createElement(L"frame");
-				ScriptOutputWriter::theNextFrameContainsScripts = true;
+			if (theNextFrameContainsScripts == false) {
+				currFrameNode = document->createElement(L"frame");
+				theNextFrameContainsScripts = true;
 			}
 
-			ScriptOutputWriter::document->getDocumentElement()->appendChild(ScriptOutputWriter::currSymbolNode);
+			document->getDocumentElement()->appendChild(currSymbolNode);
 
-			DOMElement *scriptElem = ScriptOutputWriter::document->createElement(L"script");
+			DOMElement *scriptElem = document->createElement(L"script");
 			scriptElem->setAttribute(L"layer", XMLString::transcode(to_string(layerNum).c_str()));
-			DOMCDATASection *cdataNode = ScriptOutputWriter::document->createCDATASection(
+			DOMCDATASection *cdataNode = document->createCDATASection(
 				XMLString::transcode(script.c_str()));
 
 			scriptElem->appendChild(cdataNode);
-			ScriptOutputWriter::currFrameNode->appendChild(scriptElem);
+			currFrameNode->appendChild(scriptElem);
 
 			return FCM_SUCCESS;
 		}
