@@ -20,15 +20,7 @@
 #include "GraphicFilter/IGradientBevelFilter.h"
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
-//#include "xercesc/dom/DOMDocument.hpp"
 
-/*
-
-#include "xercesc/util/PlatformUtils.hpp"
-#include "xercesc/dom/DOM.hpp"
-#include "xercesc/framework/LocalFileFormatTarget.hpp"
-XERCES_CPP_NAMESPACE_USE
-*/
 
 namespace OpenFL
 {

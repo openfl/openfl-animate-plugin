@@ -7,11 +7,6 @@
 #include <string>
 #include "Publisher.h"
 #include "Utils.h"
-//#include "xercesc/util/PlatformUtils.hpp"
-//#include "xercesc/dom/DOM.hpp"
-//#include "xercesc/framework/LocalFileFormatTarget.hpp"
-//#include "xercesc/dom/DOMElement.hpp"
-
 #include "xercesc/util/PlatformUtils.hpp"
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/framework/LocalFileFormatTarget.hpp"
@@ -74,15 +69,11 @@ namespace OpenFL {
 
 			output->setByteStream(target);
 			writer->write(document, output);
-			//XMLPlatformUtils::closeFile(target);
 			output->release();
 			output = nullptr;
 			writer->release();
 			writer = nullptr;
 			document->release();
-			//currSymbolNode->release();
-			//currFrameNode->release();
-			//currScriptNode->release();
 			delete target;
 			implementation = nullptr;
 			return FCM_SUCCESS;
@@ -99,14 +90,7 @@ namespace OpenFL {
 			FCM::StringRep16 pName,
 			ITimelineWriter* pTimelineWriter) {
 			string idString = Utils::ToString(resId);
-			//char *idString = Utils::ToString(resId);
-			//string nameString = Utils::ToString(pName, m_pCallback);
-
-
-
-
 			currSymbolNode->setAttribute(L"id", XMLString::transcode(idString.c_str()));
-
 			currSymbolNode = OpenFLOutputWriter::document->createElement(L"symbol");
 			return FCM_SUCCESS;
 		}
@@ -283,46 +267,6 @@ namespace OpenFL {
 		}
 
 	private:
-		/*
-		JSONNode* m_pRootNode;
-
-		JSONNode* m_pShapeArray;
-
-		JSONNode* m_pTimelineArray;
-
-		JSONNode* m_pBitmapArray;
-		JSONNode* m_pSoundArray;
-
-		JSONNode* m_pTextArray;
-
-		JSONNode*   m_shapeElem;
-
-		JSONNode*   m_pathArray;
-
-		JSONNode*   m_pathElem;
-
-		JSONNode*   m_gradientColor;
-
-		JSONNode*   m_stopPointArray;
-
-		std::string m_pathCmdStr;
-
-		bool        m_firstSegment;
-
-		STROKE_STYLE m_strokeStyle;
-
-		std::string m_outputHTMLFile;
-
-		std::string m_outputJSONFilePath;
-
-		std::string m_outputJSONFileName;
-
-		std::string m_outputImageFolder;
-
-		std::string m_outputSoundFolder;
-		char* m_HTMLOutput;
-
-		*/
 
 		FCM::PIFCMCallback m_pCallback;
 		
@@ -411,24 +355,18 @@ namespace OpenFL {
 		FCM::Result AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum) {
 			std::string script = Utils::ToString(pScript, m_pCallback);
 
-			//curr
-			//outputFileStream << script;
 			if (OpenFLOutputWriter::theNextFrameContainsScripts == false) {
 				OpenFLOutputWriter::currFrameNode = OpenFLOutputWriter::document->createElement(L"frame");
 				OpenFLOutputWriter::theNextFrameContainsScripts = true;
 			}
 
-			//JSONOutputWriter::currSymbolNode = JSONOutputWriter::document->createElement(L"symbol"); // THIS SHOULD HAPPEN IN THE FUNCTION THAT HAPPENS EARLIER
-			OpenFLOutputWriter::document->getDocumentElement()->appendChild(OpenFLOutputWriter::currSymbolNode); // THIS ALSO
+			OpenFLOutputWriter::document->getDocumentElement()->appendChild(OpenFLOutputWriter::currSymbolNode);
 
 			DOMElement *scriptElem = OpenFLOutputWriter::document->createElement(L"script");
 			scriptElem->setAttribute(L"layer", XMLString::transcode(to_string(layerNum).c_str()));
 			DOMCDATASection *cdataNode = OpenFLOutputWriter::document->createCDATASection(
 				XMLString::transcode(script.c_str()));
 
-			//scriptElem->setTextContent(XMLString::transcode(("<![CDATA[\n" + script + "\n]]>").c_str()));
-
-			//cdataNode->setTextContent(XMLString::transcode(script.c_str()));
 			scriptElem->appendChild(cdataNode);
 			OpenFLOutputWriter::currFrameNode->appendChild(scriptElem);
 
@@ -454,25 +392,12 @@ namespace OpenFL {
 
 
 		}
-		/*
-		const JSONNode* GetRoot();
-		*/
-		void Finish(FCM::U_Int32 resId, FCM::StringRep16 pName) {
 
+		void Finish(FCM::U_Int32 resId, FCM::StringRep16 pName) {
 
 		}
 
 	private:
-		/*
-		JSONNode* m_pCommandArray;
-
-		JSONNode* m_pFrameArray;
-
-		JSONNode* m_pTimelineElement;
-
-		JSONNode* m_pFrameElement;
-
-		*/
 
 		FCM::PIFCMCallback m_pCallback;
 

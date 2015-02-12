@@ -9,20 +9,6 @@
 
 #include "IOutputWriter.h"
 #include <string>
-#include "Publisher.h"
-#include "Utils.h"
-//#include "xercesc/util/PlatformUtils.hpp"
-//#include "xercesc/dom/DOM.hpp"
-//#include "xercesc/framework/LocalFileFormatTarget.hpp"
-//#include "xercesc/dom/DOMElement.hpp"
-
-#include "xercesc/util/PlatformUtils.hpp"
-#include "xercesc/dom/DOM.hpp"
-#include "xercesc/framework/LocalFileFormatTarget.hpp"
-
-using namespace std;
-
-XERCES_CPP_NAMESPACE_USE
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -83,18 +69,6 @@ namespace OpenFL
     class JSONOutputWriter : public IOutputWriter
     {
     public:
-
-		static DOMElement* currSymbolNode;
-
-		static DOMElement* currScriptNode;
-
-		static DOMElement* currFrameNode;
-
-		static DOMImplementation *implementation;
-
-		static XERCES_CPP_NAMESPACE::DOMDocument*        document;
-
-		static bool theNextFrameContainsScripts;
 
         // Marks the begining of the output
         virtual FCM::Result StartOutput(std::string& outputFileName);
@@ -236,8 +210,6 @@ namespace OpenFL
 
     private:
 
-		
-		
         JSONNode* m_pRootNode;
 
         JSONNode* m_pShapeArray;
@@ -350,13 +322,7 @@ namespace OpenFL
 
         FCM::PIFCMCallback m_pCallback;
     };
-
-
-
-	
 };
-
-
 
 #endif // OUTPUT_WRITER_H_
 

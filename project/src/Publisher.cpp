@@ -93,11 +93,6 @@ namespace OpenFL
         const PIFCMDictionary pDictPublishSettings, 
         const PIFCMDictionary pDictConfig)
     {
-		/*
-		FCM::FCMListPtr pLibraryItemList;
-		pFlaDocument->GetLibraryItems(pLibraryItemList.m_Ptr);
-		ExportLibraryItems(pLibraryItemList);
-		*/
         return Export(pFlaDocument, NULL, NULL, pDictPublishSettings, pDictConfig);
     }
 
@@ -113,9 +108,7 @@ namespace OpenFL
         return Export(pFlaDocument, pTimeline, &frameRange, pDictPublishSettings, pDictConfig);
     }
 
-#define USE_ORIGINAL_EXPORT
 
-#ifdef USE_ORIGINAL_EXPORT
 	FCM::Result CPublisher::Export(
 		DOM::PIFLADocument pFlaDocument,
 		DOM::PITimeline pTimeline,
@@ -152,8 +145,6 @@ namespace OpenFL
 
 		Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
 
-//#ifdef USE_SWF_EXPORTER_SERVICE
-
 		// Use the SWF Exporter Service to export to a SWF
 
 		res = GetCallback()->GetService(Exporter::Service::EXPORTER_SWF_SERVICE, pUnk.m_Ptr);
@@ -184,7 +175,6 @@ namespace OpenFL
 
 		// Post-process the SWF
 
-//#else
 		DOM::Utils::COLOR color;
 		FCM::U_Int32 stageHeight;
 		FCM::U_Int32 stageWidth;
@@ -369,38 +359,9 @@ namespace OpenFL
 			LaunchBrowser(fileName);
 		}
 
-//#endif
 		return FCM_SUCCESS;
 	}
 
-
-#endif
-
-#ifndef USE_ORIGINAL_EXPORT
-	FCM::Result CPublisher::Export(
-		DOM::PIFLADocument pFlaDocument,
-		DOM::PITimeline pTimeline,
-		const Exporter::Service::RANGE* pFrameRange,
-		const PIFCMDictionary pDictPublishSettings,
-		const PIFCMDictionary pDictConfig)
-	{
-
-		Init();
-
-		FCM::Result res;
-
-		FCM::FCMListPtr pLibraryItemList;
-		res = pFlaDocument->GetLibraryItems(pLibraryItemList.m_Ptr);
-		if (FCM_FAILURE_CODE(res))
-		{
-			return res;
-		}
-
-		ExportLibraryItems(pLibraryItemList, pDictPublishSettings);
-		return FCM_SUCCESS;
-	}
-
-#endif
     FCM::Result CPublisher::ClearCache()
     {
         if (m_pResourcePalette)
@@ -590,202 +551,6 @@ namespace OpenFL
 
     }
 
-
-	FCM::Result CPublisher::ExportLibraryItems(FCM::FCMListPtr pLibraryItemList, const PIFCMDictionary pDictPublishSettings) {
-		FCM::U_Int32 count = 0;
-		FCM::Result res;
-
-
-		ASSERT(pLibraryItemList);
-
-		res = pLibraryItemList->Count(count);
-		ASSERT(FCM_SUCCESS_CODE(res));
-
-		FCM::AutoPtr<FCM::IFCMUnknown> pUnkCalloc;
-		res = GetCallback()->GetService(SRVCID_Core_Memory, pUnkCalloc.m_Ptr);
-		AutoPtr<FCM::IFCMCalloc> callocService = pUnkCalloc;
-
-		ofstream outputFileStream;
-		std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/"; // TODO: get a relative path
-		outputFileStream.open(exportDir + "scripts.xml");
-
-
-		for (FCM::U_Int32 index = 0; index < count; index++)
-		{
-			Utils::Trace(GetCallback(), "Entered for\n");
-			FCM::StringRep16 pLibItemName = NULL;
-			std::string libItemName;
-			AutoPtr<IFCMDictionary> pDict;
-			AutoPtr<DOM::ILibraryItem> pLibItem = pLibraryItemList[index];
-
-			res = pLibItem->GetName(&pLibItemName);
-
-			ASSERT(FCM_SUCCESS_CODE(res));
-			libItemName = Utils::ToString(pLibItemName, GetCallback());
-
-			//FCM::Result resBaseClassName = pLibItem->GetProperties();
-
-			AutoPtr<DOM::LibraryItem::IFolderItem> pFolderItem = pLibItem;
-			if (pFolderItem)
-			{
-				FCM::FCMListPtr pChildren;
-
-				res = pFolderItem->GetChildren(pChildren.m_Ptr);
-				ASSERT(FCM_SUCCESS_CODE(res));
-
-				// Export all its children
-				res = ExportLibraryItems(pChildren);
-				ASSERT(FCM_SUCCESS_CODE(res));
-			}
-			else
-			{
-				FCM::FCMDictRecTypeID type;
-				FCM::U_Int32 valLen;
-				AutoPtr<DOM::LibraryItem::IFontItem> pFontItem = pLibItem;
-				AutoPtr<DOM::LibraryItem::ISymbolItem> pSymbolItem = pLibItem;
-				AutoPtr<DOM::LibraryItem::IMediaItem> pMediaItem = pLibItem;
-
-
-
-
-
-				res = pLibItem->GetProperties(pDict.m_Ptr);
-				ASSERT(FCM_SUCCESS_CODE(res));
-
-				res = pDict->GetInfo(kLibProp_LinkageClass_DictKey,
-					type, valLen);
-
-				if (FCM_SUCCESS_CODE(res))
-				{
-					FCM::Boolean hasResource;
-					ResourcePalette* pResPalette = static_cast<ResourcePalette*>(m_pResourcePalette.m_Ptr);
-
-					// Library Item has linkage identifer
-
-					if (pSymbolItem)
-					{
-						Utils::Trace(GetCallback(), "Entered  if (pSymbolItem)\n");
-						//
-						// Check if it has been exported already by comparing names of resources 
-						// already exported from the timelines.
-						//
-
-						FCM::Result resBaseClassName = pDict->GetInfo(kLibProp_LinkageBaseClass_DictKey, type, valLen);
-
-						ASSERT(FCM_SUCCESS_CODE(resBaseClassName));
-						//std::string symbolName;
-						std::string className;
-						std::string baseClassName;
-						//string symbolID;
-						string symbolID;
-						ReadString(pDict, kLibProp_LinkageClass_DictKey, className);
-						ReadString(pDict, kLibProp_LinkageBaseClass_DictKey, baseClassName);
-						ReadString(pDict, kLibProp_LinkageIdentifier_DictKey, symbolID);
-						//FCM::StringRep16 pBaseClassName = NULL;
-						//baseClassName = Utils::ToString(pBaseClassName, GetCallback());
-						Utils::Trace(GetCallback(), "Symbol: %s %s %s\n", libItemName, className, baseClassName);
-
-						//scriptsStream << pLibItem->GetIID();
-						//outputFileStream << className << " " << baseClassName << " ";
-						DOM::PITimeline symbolTimeline;
-						pSymbolItem->GetTimeLine(symbolTimeline);
-
-						RANGE range;
-						range.min = 0;
-						symbolTimeline->GetMaxFrameCount(range.max);
-						range.max -= 1;
-
-						AutoPtr<ITimelineBuilderFactory> pTimelineBuilderFactory;
-
-						res = GetCallback()->CreateInstance(
-							NULL,
-							CLSID_TimelineBuilderFactory,
-							IID_ITimelineBuilderFactory,
-							(void**)&pTimelineBuilderFactory);
-						if (FCM_FAILURE_CODE(res))
-						{
-							return res;
-						}
-
-						AutoPtr<ITimelineBuilder> pTimelineBuilder;
-
-						m_frameCmdGeneratorService->GenerateFrameCommands(symbolTimeline, range, pDictPublishSettings, m_pResourcePalette,
-							pTimelineBuilderFactory,
-							pTimelineBuilder.m_Ptr);
-
-
-							/*
-							std::ofstream symbolClassFile;
-							std::string exportDir = "C:/Users/Marko/Desktop/ExportTest/";
-							//std::string package = className.replace(package.begin(), package.end(), ".", "/");
-							std::string package = className;
-							std::replace(package.begin(), package.end(), '.', '/');
-							//flexidevs/reusable/
-							package = regex_replace(package, regex("(.*)/(.*)"), "$1/");
-							//create_directories(path + package);
-							create_directories(path(exportDir + package));
-							directory_iterator dirIt(path("."));
-							string absolutePath = complete(path("."));
-							//createFileFromSymbol()
-							symbolClassFile.open(exportDir + package + libItemName + ".hx");
-							symbolClassFile << "class " << libItemName << " extends " << baseClassName;
-							symbolClassFile.close();
-							*/
-
-							/*
-							char *traceString;
-							std::sprintf(traceString, "Symbol: %s %s", libItemName, baseClassName);
-
-							Utils::Trace(GetCallback(), traceString);
-							*/
-
-							/*
-							res = pResPalette->HasResource(libItemName, hasResource);
-							if (!hasResource)
-							{
-							Utils::Trace(GetCallback(), "Entered if (!hasResource)\n");
-							// Resource is not yet exported. Export it using
-							// FrameCommandGenerator::GenerateFrameCommands
-
-
-
-
-
-
-							}
-							*/
-					}
-					else if (pMediaItem)
-					{
-						//
-						// Check if it has been exported already by comparing names of resources 
-						// already exported from the timelines.
-						//
-						res = pResPalette->HasResource(libItemName, hasResource);
-						if (!hasResource)
-						{
-							// Resource is not yet exported. Export it.
-
-							// Depending on bitmap/sound, export it.
-						}
-					}
-					else if (pFontItem)
-					{
-						// Use the font name to check if already exported.
-
-						// Use IFontTableGeneratorService::CreateFontTableForFontItem() to create 
-						// a font table and then export it.
-					}
-				}
-			}
-
-			callocService->Free((FCM::PVoid)pLibItemName);
-		}
-
-		outputFileStream.close();
-
-		return FCM_SUCCESS;
-	}
 
     //
     // Note: This function is NOT completely implemented but provides guidelines 
