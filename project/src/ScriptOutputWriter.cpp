@@ -25,16 +25,16 @@
 namespace OpenFL
 {
 
-	DOMElement* OpenFLOutputWriter::currScriptNode;
+	DOMElement* ScriptOutputWriter::currScriptNode;
 
-	DOMElement* OpenFLOutputWriter::currFrameNode;
+	DOMElement* ScriptOutputWriter::currFrameNode;
 
-	DOMImplementation *OpenFLOutputWriter::implementation;
+	DOMImplementation *ScriptOutputWriter::implementation;
 
-	XERCES_CPP_NAMESPACE::DOMDocument*        OpenFLOutputWriter::document;
+	XERCES_CPP_NAMESPACE::DOMDocument*        ScriptOutputWriter::document;
 
-	DOMElement* OpenFLOutputWriter::currSymbolNode;
+	DOMElement* ScriptOutputWriter::currSymbolNode;
 
-	bool OpenFLOutputWriter::theNextFrameContainsScripts = false;
+	bool ScriptOutputWriter::theNextFrameContainsScripts = false;
 
 };

@@ -17,7 +17,7 @@ XERCES_CPP_NAMESPACE_USE
 
 namespace OpenFL {
 
-	class OpenFLOutputWriter : public IOutputWriter
+	class ScriptOutputWriter : public IOutputWriter
 	{
 	public:
 
@@ -91,7 +91,7 @@ namespace OpenFL {
 			ITimelineWriter* pTimelineWriter) {
 			string idString = Utils::ToString(resId);
 			currSymbolNode->setAttribute(L"id", XMLString::transcode(idString.c_str()));
-			currSymbolNode = OpenFLOutputWriter::document->createElement(L"symbol");
+			currSymbolNode = ScriptOutputWriter::document->createElement(L"symbol");
 			return FCM_SUCCESS;
 		}
 
@@ -248,11 +248,11 @@ namespace OpenFL {
 			DOM::LibraryItem::PIMediaItem pMediaItem) {
 			return FCM_SUCCESS;
 		}
-		OpenFLOutputWriter(FCM::PIFCMCallback pCallback) : m_pCallback(pCallback) {
+		ScriptOutputWriter(FCM::PIFCMCallback pCallback) : m_pCallback(pCallback) {
 
 		}
 
-		~OpenFLOutputWriter() {
+		~ScriptOutputWriter() {
 
 		}
 
@@ -273,7 +273,7 @@ namespace OpenFL {
 	};
 
 
-	class OpenFLTimelineWriter : public ITimelineWriter
+	class ScriptTimelineWriter : public ITimelineWriter
 	{
 	public:
 
@@ -343,11 +343,11 @@ namespace OpenFL {
 		}
 
 		FCM::Result ShowFrame(FCM::U_Int32 frameNum) {
-			if (OpenFLOutputWriter::theNextFrameContainsScripts == true) {
-				OpenFLOutputWriter::currFrameNode->setAttribute(L"num",
+			if (ScriptOutputWriter::theNextFrameContainsScripts == true) {
+				ScriptOutputWriter::currFrameNode->setAttribute(L"num",
 					XMLString::transcode(to_string(frameNum).c_str()));
-				OpenFLOutputWriter::currSymbolNode->appendChild(OpenFLOutputWriter::currFrameNode);
-				OpenFLOutputWriter::theNextFrameContainsScripts = false;
+				ScriptOutputWriter::currSymbolNode->appendChild(ScriptOutputWriter::currFrameNode);
+				ScriptOutputWriter::theNextFrameContainsScripts = false;
 			}
 			return FCM_SUCCESS;
 		}
@@ -355,20 +355,20 @@ namespace OpenFL {
 		FCM::Result AddFrameScript(FCM::CStringRep16 pScript, FCM::U_Int32 layerNum) {
 			std::string script = Utils::ToString(pScript, m_pCallback);
 
-			if (OpenFLOutputWriter::theNextFrameContainsScripts == false) {
-				OpenFLOutputWriter::currFrameNode = OpenFLOutputWriter::document->createElement(L"frame");
-				OpenFLOutputWriter::theNextFrameContainsScripts = true;
+			if (ScriptOutputWriter::theNextFrameContainsScripts == false) {
+				ScriptOutputWriter::currFrameNode = ScriptOutputWriter::document->createElement(L"frame");
+				ScriptOutputWriter::theNextFrameContainsScripts = true;
 			}
 
-			OpenFLOutputWriter::document->getDocumentElement()->appendChild(OpenFLOutputWriter::currSymbolNode);
+			ScriptOutputWriter::document->getDocumentElement()->appendChild(ScriptOutputWriter::currSymbolNode);
 
-			DOMElement *scriptElem = OpenFLOutputWriter::document->createElement(L"script");
+			DOMElement *scriptElem = ScriptOutputWriter::document->createElement(L"script");
 			scriptElem->setAttribute(L"layer", XMLString::transcode(to_string(layerNum).c_str()));
-			DOMCDATASection *cdataNode = OpenFLOutputWriter::document->createCDATASection(
+			DOMCDATASection *cdataNode = ScriptOutputWriter::document->createCDATASection(
 				XMLString::transcode(script.c_str()));
 
 			scriptElem->appendChild(cdataNode);
-			OpenFLOutputWriter::currFrameNode->appendChild(scriptElem);
+			ScriptOutputWriter::currFrameNode->appendChild(scriptElem);
 
 			return FCM_SUCCESS;
 		}
@@ -383,12 +383,12 @@ namespace OpenFL {
 			return FCM_SUCCESS;
 		}
 
-		OpenFLTimelineWriter(FCM::PIFCMCallback pCallback) : m_pCallback(pCallback) {
+		ScriptTimelineWriter(FCM::PIFCMCallback pCallback) : m_pCallback(pCallback) {
 
 
 		}
 
-		~OpenFLTimelineWriter() {
+		~ScriptTimelineWriter() {
 
 
 		}

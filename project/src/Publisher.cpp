@@ -186,7 +186,7 @@ namespace OpenFL
 
 		// Create a output writer
 		//std::auto_ptr<IOutputWriter> pOutputWriter(new JSONOutputWriter(GetCallback()));
-		std::auto_ptr<IOutputWriter> pOutputWriter(new OpenFLOutputWriter(GetCallback()));
+		std::auto_ptr<IOutputWriter> pOutputWriter(new ScriptOutputWriter(GetCallback()));
 		if (pOutputWriter.get() == NULL)
 		{
 			return FCM_MEM_NOT_AVAILABLE;
@@ -1939,7 +1939,7 @@ namespace OpenFL
         m_pOutputWriter->StartDefineTimeline();
 
 		//m_pTimelineWriter = new JSONTimelineWriter(GetCallback());
-		m_pTimelineWriter = new OpenFLTimelineWriter(GetCallback());
+		m_pTimelineWriter = new ScriptTimelineWriter(GetCallback());
 
         ASSERT(m_pTimelineWriter);
     }
