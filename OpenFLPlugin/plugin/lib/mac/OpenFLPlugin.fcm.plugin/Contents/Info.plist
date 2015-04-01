@@ -9,9 +9,9 @@
 	<key>CFBundleExecutable</key>
 	<string>OpenFLPlugin</string>
 	<key>CFBundleGetInfoString</key>
-	<string>OpenFLPlugin 1.0.0, Copyright © 2014 OpenFL Technologies.</string>
+	<string>OpenFLPlugin 1.0.0, Copyright © 2015 OpenFL.</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.openfl.OpenFLPlugin.plugin</string>
+	<string>com.adobe.flashpro.DocTypePublisherPlugin.plugin</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -39,6 +39,6 @@
 	<key>DTXcodeBuild</key>
 	<string>5A3005</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2014 OpenFL Technologies.</string>
+	<string>Copyright © 2015 OpenFL.</string>
 </dict>
 </plist>

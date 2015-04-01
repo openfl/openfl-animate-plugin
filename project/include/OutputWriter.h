@@ -186,17 +186,17 @@ namespace OpenFL
             const std::string& name,
             DOM::LibraryItem::PIMediaItem pMediaItem);
 
-		// Define text
-		virtual FCM::Result DefineText(
-			FCM::U_Int32 resId, 
-			const std::string& name, 
-			const DOM::Utils::COLOR& color,
-			const std::string& displayText, 
-			DOM::FrameElement::PIClassicText pTextItem);
+        // Define text
+        virtual FCM::Result DefineText(
+            FCM::U_Int32 resId, 
+            const std::string& name, 
+            const DOM::Utils::COLOR& color,
+            const std::string& displayText, 
+            DOM::FrameElement::PIClassicText pTextItem);
 
         virtual FCM::Result DefineSound(
             FCM::U_Int32 resId, 
-			const std::string& name, 
+            const std::string& name, 
             DOM::LibraryItem::PIMediaItem pMediaItem);
         JSONOutputWriter(FCM::PIFCMCallback pCallback);
 
@@ -219,7 +219,7 @@ namespace OpenFL
         JSONNode* m_pBitmapArray;
         JSONNode* m_pSoundArray;
 
-		JSONNode* m_pTextArray;
+        JSONNode* m_pTextArray;
 
         JSONNode*   m_shapeElem;
 
@@ -273,6 +273,10 @@ namespace OpenFL
         virtual FCM::Result UpdateZOrder(
             FCM::U_Int32 objectId,
             FCM::U_Int32 placeAfterObjectId);
+
+        virtual FCM::Result UpdateMask(
+            FCM::U_Int32 objectId,
+            FCM::U_Int32 maskTillObjectId);
 
         virtual FCM::Result UpdateBlendMode(
             FCM::U_Int32 objectId,

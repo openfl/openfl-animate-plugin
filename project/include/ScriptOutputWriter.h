@@ -307,6 +307,13 @@ namespace OpenFL {
 
 			return FCM_SUCCESS;
 		}
+		
+		FCM::Result UpdateMask(
+		FCM::U_Int32 objectId,
+		FCM::U_Int32 maskTillObjectId) {
+			
+			return FCM_SUCCESS;
+		}
 
 		FCM::Result UpdateBlendMode(
 			FCM::U_Int32 objectId,

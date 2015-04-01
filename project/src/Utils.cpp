@@ -1,8 +1,8 @@
 #include "Utils.h"
-#include <stdarg.h>
 
 #ifdef _WINDOWS
 #include "Windows.h"
+#include "ShellApi.h"
 #endif
 
 #ifdef __APPLE__
@@ -397,7 +397,45 @@ namespace OpenFL
         }
 #endif
     }
-    
+
+    void Utils::LaunchBrowser(const std::string& outputFileName)
+    {
+
+#ifdef _WINDOWS
+
+        std::wstring output = L"http://localhost:8080/";
+        std::wstring tail;
+        tail.assign(outputFileName.begin(), outputFileName.end());
+        output += tail;
+        ShellExecuteW(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
+
+#else
+
+        std::string output = "http://localhost:8080/";
+        output += outputFileName;
+        std::string str = "/usr/bin/open " + output;
+        system(str.c_str());
+
+#endif // _WINDOWS
+
+    }
+
+    void Utils::OpenFStream(const std::string& outputFileName, std::fstream &file, std::ios_base::openmode mode, FCM::PIFCMCallback pCallback)
+    {
+ 
+#ifdef _WINDOWS
+        FCM::StringRep16 pFilePath = Utils::ToString16(outputFileName, pCallback);
+
+        file.open(pFilePath,mode);
+
+        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = Utils::GetCallocService(pCallback);
+        ASSERT(pCalloc.m_Ptr != NULL);  
+        pCalloc->Free(pFilePath);
+#else
+       file.open(outputFileName.c_str(),mode);
+#endif
+    }
+
     void Utils::Trace(FCM::PIFCMCallback pCallback, const char* fmt, ...)
     {
         FCM::AutoPtr<FCM::IFCMUnknown> pUnk;

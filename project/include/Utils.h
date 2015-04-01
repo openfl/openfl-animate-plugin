@@ -13,7 +13,8 @@
 #include <string>
 #include "FillStyle/IGradientFillStyle.h"
 #include "IFCMStringUtils.h"
-
+#include <iostream>
+#include <fstream>
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -107,6 +108,11 @@ namespace OpenFL
         static void Trace(FCM::PIFCMCallback pCallback, const char* str, ...);
 
         static void Log(const char* fmt, ...);
+
+        static void LaunchBrowser(const std::string& outputFileName);
+
+        static void OpenFStream(const std::string& outputFileName, std::fstream &file, std::ios_base::openmode mode, FCM::PIFCMCallback pCallback);
+
     };
 };
 

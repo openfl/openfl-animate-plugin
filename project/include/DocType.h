@@ -35,6 +35,14 @@ namespace OpenFL
 }
 
  
+/* -------------------------------------------------- Enums */
+
+
+/* -------------------------------------------------- Macros / Constants */
+
+
+/* -------------------------------------------------- Structs / Unions */
+
 namespace OpenFL
 {
     typedef std::map<std::string, Value*> StrValueMap;
@@ -47,7 +55,7 @@ namespace OpenFL
 
 namespace OpenFL
 {
-	class CDocType : public DocType::IDocType, public FCM::FCMObjectBase
+    class CDocType : public DocType::IDocType, public FCM::FCMObjectBase
     {
         BEGIN_INTERFACE_MAP(CDocType, SAMPLE_PLUGIN_VERSION)
             INTERFACE_ENTRY(IDocType)    

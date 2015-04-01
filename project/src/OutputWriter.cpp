@@ -124,28 +124,25 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::EndDocument()
     {
-        std::ofstream file;
-
+        std::fstream file;
         m_pRootNode->push_back(*m_pShapeArray);
         m_pRootNode->push_back(*m_pBitmapArray);
         m_pRootNode->push_back(*m_pSoundArray);
-		m_pRootNode->push_back(*m_pTextArray);
-        m_pRootNode->push_back(*m_pTimelineArray);
-		
+        m_pRootNode->push_back(*m_pTextArray);
+        m_pRootNode->push_back(*m_pTimelineArray);        
 
-        // Write the json file
-        remove(m_outputJSONFilePath.c_str());
+        // Write the JSON file (overwrite file if it already exists)
+        Utils::OpenFStream(m_outputJSONFilePath, file, std::ios_base::trunc|std::ios_base::out, m_pCallback);
 
         JSONNode firstNode(JSON_NODE);
         firstNode.push_back(*m_pRootNode);
-        file.open(m_outputJSONFilePath.c_str());
+
         file << firstNode.write_formatted();
         file.close();
 
-        // Write the HTML file (Remove file if it already exists)
-        remove(m_outputHTMLFile.c_str());
+        // Write the HTML file (overwrite file if it already exists)
+        Utils::OpenFStream(m_outputHTMLFile, file, std::ios_base::trunc|std::ios_base::out, m_pCallback);
 
-        file.open(m_outputHTMLFile.c_str());
         file << m_HTMLOutput;
         file.close();
 
@@ -668,7 +665,7 @@ namespace OpenFL
         return FCM_SUCCESS;
     }
 
-	FCM::Result JSONOutputWriter::DefineText(
+    FCM::Result JSONOutputWriter::DefineText(
             FCM::U_Int32 resId, 
             const std::string& name, 
             const DOM::Utils::COLOR& color, 
@@ -707,7 +704,7 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::DefineSound(
             FCM::U_Int32 resId, 
-			const std::string& name, 
+            const std::string& name, 
             DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
@@ -766,7 +763,7 @@ namespace OpenFL
         ASSERT(m_pBitmapArray);
         m_pBitmapArray->set_name("Bitmaps");
 
-		m_pTextArray = new JSONNode(JSON_ARRAY);
+        m_pTextArray = new JSONNode(JSON_ARRAY);
         ASSERT(m_pTextArray);
         m_pTextArray->set_name("Text");
 
@@ -786,7 +783,7 @@ namespace OpenFL
 
         delete m_pShapeArray;
 
-		delete m_pTextArray;
+        delete m_pTextArray;
 
         delete m_pRootNode;
     }
@@ -918,6 +915,25 @@ namespace OpenFL
         return FCM_SUCCESS;
     }
 
+
+    FCM::Result JSONTimelineWriter::UpdateMask(
+        FCM::U_Int32 objectId,
+        FCM::U_Int32 maskTillObjectId)
+    {
+        // Commenting out the function since the runtime
+        // does not support masking
+        /*
+        JSONNode commandElement(JSON_NODE);
+
+        commandElement.push_back(JSONNode("cmdType", "UpdateMask"));
+        commandElement.push_back(JSONNode("objectId", OpenFL::Utils::ToString(objectId)));
+        commandElement.push_back(JSONNode("maskTill", OpenFL::Utils::ToString(maskTillObjectId)));
+
+        m_pCommandArray->push_back(commandElement);
+        */
+        
+        return FCM_SUCCESS;
+    }
 
     FCM::Result JSONTimelineWriter::UpdateBlendMode(
         FCM::U_Int32 objectId,
