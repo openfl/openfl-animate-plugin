@@ -60,7 +60,7 @@ namespace DocType
 namespace DocType
 {
 
-	/**
+    /**
      * @class IFeatureMatrix
      *
      * @brief Defines an interface that represents the feature matrix for the associated 

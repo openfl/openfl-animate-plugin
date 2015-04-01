@@ -64,7 +64,7 @@ namespace FCM
      *
      * @brief Defines the interface that represents the ClassFactory.
      */
-	BEGIN_DECLARE_INTERFACE( IFCMClassFactory,FCMIID_IFCMClassFactory )
+    BEGIN_DECLARE_INTERFACE( IFCMClassFactory,FCMIID_IFCMClassFactory )
         
         /**
          * @brief  Creates an uninitialized object.
@@ -91,7 +91,7 @@ namespace FCM
             ConstRefFCMIID iid,
             FCM::PPVoid pAny) = 0;
 
-	END_DECLARE_INTERFACE
+    END_DECLARE_INTERFACE
 
 };  // namespace FCM
 

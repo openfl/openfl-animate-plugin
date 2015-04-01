@@ -51,7 +51,7 @@ namespace FCM
      *
      * @brief Minor version of the framework.
      */
-    #define FCM_VERSION_MINOR                   0x00
+    #define FCM_VERSION_MINOR                   0x01
     
 
     /**

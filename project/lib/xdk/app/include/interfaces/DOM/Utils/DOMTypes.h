@@ -237,6 +237,11 @@ namespace DOM
          * @struct COLOR_MATRIX
          *
          * @brief  Defines a color matrix which contitutes of matrix and a color array.
+         *         Color Matrix is of the following form:
+         *         [red-multiplier,                 0,                0,                 0,  red-additive, 
+         *                       0,  green-mulitplier,                0,                 0,  green-additive,    
+         *                       0,                 0,  blue-mulitplier,                 0,  blue-additive,      
+         *                       0,                 0,                0,  alpha-multiplier,  alpha-additive]      
          */
         struct COLOR_MATRIX
         {

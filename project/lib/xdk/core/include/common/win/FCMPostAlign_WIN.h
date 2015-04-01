@@ -17,6 +17,6 @@
 **************************************************************************/
 
 #ifdef FCM_ALIGNMENT
-	#pragma pack(pop, FCMAlign)
+    #pragma pack(pop, FCMAlign)
 #endif
 

@@ -65,7 +65,7 @@ namespace FCM
      *
      * @brief Defines the interface that represents the NoAggregationUnknown.
      */
-	BEGIN_DECLARE_BASE_INTERFACE(IFCMNoAggregationUnknown,FCMIID_IFCMNoAggregationUnknown)
+    BEGIN_DECLARE_BASE_INTERFACE(IFCMNoAggregationUnknown,FCMIID_IFCMNoAggregationUnknown)
         
         /**
          * @brief  Return pointers to supported interfaces on given object.
@@ -78,7 +78,7 @@ namespace FCM
          *
          * @return FCM_SUCCESS is returned for success, else an error code is returned.
          */
-		virtual FCM::Result _FCMCALL MainQueryInterface(ConstRefFCMIID pInterfaceID, FCM::PPVoid ppvObj)=0;
+        virtual FCM::Result _FCMCALL MainQueryInterface(ConstRefFCMIID pInterfaceID, FCM::PPVoid ppvObj)=0;
 
 
         /**
@@ -86,8 +86,8 @@ namespace FCM
          *
          * @return Returns the new reference count.
          */
-		virtual FCM::U_Int32 _FCMCALL NoAggregationAddRef() = 0;
-		
+        virtual FCM::U_Int32 _FCMCALL NoAggregationAddRef() = 0;
+        
         
         /**
          * @brief  Decrements the reference count on the given object.
@@ -96,7 +96,7 @@ namespace FCM
          */
         virtual FCM::U_Int32 _FCMCALL NoAggregationRelease() = 0;
 
-	END_DECLARE_INTERFACE
+    END_DECLARE_INTERFACE
 
 };  // namespace FCM
 

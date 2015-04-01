@@ -16,7 +16,12 @@
 * from Adobe Systems Incorporated.
 ******************************************************************************/
 
-
+/**
+ * @file  FCMTypes.h
+ *
+ * @brief This file contains definitions for various data types.
+ */
+ 
 #ifndef FCM_TYPES_H_
 #define FCM_TYPES_H_
 

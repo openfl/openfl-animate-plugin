@@ -66,7 +66,7 @@ namespace FCM
      *
      * @brief Defines the interface that represents the IUnknown object.
      */
-	BEGIN_DECLARE_BASE_INTERFACE(IFCMUnknown, FCMIID_IFCMUnknown)
+    BEGIN_DECLARE_BASE_INTERFACE(IFCMUnknown, FCMIID_IFCMUnknown)
         
         /**
          * @brief  Return pointers to supported interfaces on given object.
@@ -89,7 +89,7 @@ namespace FCM
          *
          * @return Returns the new reference count.
          */
-		virtual FCM::U_Int32 _FCMCALL AddRef() = 0;
+        virtual FCM::U_Int32 _FCMCALL AddRef() = 0;
 
 
         /**
@@ -97,9 +97,9 @@ namespace FCM
          *
          * @return Returns the new reference count.
          */
-		virtual FCM::U_Int32 _FCMCALL Release() = 0;
+        virtual FCM::U_Int32 _FCMCALL Release() = 0;
 
-	END_DECLARE_INTERFACE
+    END_DECLARE_INTERFACE
 
 };  // namespace FCM
 

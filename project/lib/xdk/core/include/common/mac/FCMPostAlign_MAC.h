@@ -17,12 +17,12 @@
 **************************************************************************/
 
 #ifdef FCM_ALIGNMENT
-	
-	#if defined(__GNUC__)
-		#pragma pack(pop, FCMAlign)
-	#else
-		#error "Unsupported mac compiler"
-	#endif
+    
+    #if defined(__GNUC__)
+        #pragma pack(pop, FCMAlign)
+    #else
+        #error "Unsupported mac compiler"
+    #endif
 
 #endif // FCM_ALIGNMENT
 

@@ -16,6 +16,11 @@
 * from Adobe Systems Incorporated.
 ******************************************************************************/
 
+/**
+ * @file  FCMPluginInterface.h
+ *
+ * @brief This file contains core definitions of the framework Flash Component Model (FCM).
+ */
 
 #ifndef FCM_PLUGIN_INTERFACE_H_
 #define FCM_PLUGIN_INTERFACE_H_

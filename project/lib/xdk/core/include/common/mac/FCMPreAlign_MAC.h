@@ -17,16 +17,16 @@
 **************************************************************************/
 
 #ifdef FCM_ALIGNMENT
-	
-	#if defined(__GNUC__)
-		#if defined(FCM_OS_64) 
-			#pragma pack(push, FCMAlign, 16)
-		#else
-			#error "Unsupported platform bit depth"
-		#endif
-	#else
-		#error "Unsupported mac compiler"
-	#endif
+    
+    #if defined(__GNUC__)
+        #if defined(FCM_OS_64) 
+            #pragma pack(push, FCMAlign, 16)
+        #else
+            #error "Unsupported platform bit depth"
+        #endif
+    #else
+        #error "Unsupported mac compiler"
+    #endif
 
 #endif // FCM_ALIGNMENT
 

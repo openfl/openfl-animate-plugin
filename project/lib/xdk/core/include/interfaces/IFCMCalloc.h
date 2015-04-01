@@ -65,28 +65,28 @@ namespace FCM
      *
      * @brief Defines the interface that represents the calloc.
      */
-	BEGIN_DECLARE_INTERFACE(IFCMCalloc , FCMIID_IFCMCalloc )
-	
+    BEGIN_DECLARE_INTERFACE(IFCMCalloc , FCMIID_IFCMCalloc )
+    
     /**  
-	 * @brief  Allocates memory of the size requested by the parameter cb.
+     * @brief  Allocates memory of the size requested by the parameter cb.
      *
-	 * @param  cb (IN)
+     * @param  cb (IN)
      *         size of the memory to be allocated.
      *
-	 * @return returns a pointer to the allocated memory.
-	 */
-	virtual FCM::PVoid _FCMCALL Alloc(FCM::U_Int32 cb) = 0;
+     * @return returns a pointer to the allocated memory.
+     */
+    virtual FCM::PVoid _FCMCALL Alloc(FCM::U_Int32 cb) = 0;
 
 
-	/**  
-	* @brief  Deallocates the memory pointed by the param pv.
+    /**  
+    * @brief  Deallocates the memory pointed by the param pv.
     *
-	* @param  pv (IN)
+    * @param  pv (IN)
     *         pointer to memory to be deallocated.
-	*/
-	virtual void _FCMCALL Free(FCM::PVoid pv) = 0;
+    */
+    virtual void _FCMCALL Free(FCM::PVoid pv) = 0;
 
-	END_DECLARE_INTERFACE
+    END_DECLARE_INTERFACE
 
 };  // namespace FCM
 
