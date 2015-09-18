@@ -118,9 +118,9 @@ namespace OpenFL
         res = pFlaDocument->GetTypeId(guid);
         ASSERT(FCM_SUCCESS_CODE(res));
 
-        std::string pub_guid = Utils::ToString(guid);
-        Utils::Trace(GetCallback(), "Publishing begins for document with GUID: %s\n", 
-            pub_guid.c_str());
+        //std::string pub_guid = Utils::ToString(guid);
+        //Utils::Trace(GetCallback(), "Publishing begins for document with GUID: %s\n", 
+            //pub_guid.c_str());
 
         res = GetOutputFileName(pFlaDocument, pTimeline, pDictPublishSettings, outFile);
         if (FCM_FAILURE_CODE(res))
@@ -131,7 +131,7 @@ namespace OpenFL
             return res;
         }
 
-        Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
+        //Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
 
 #ifdef USE_SWF_EXPORTER_SERVICE
 
