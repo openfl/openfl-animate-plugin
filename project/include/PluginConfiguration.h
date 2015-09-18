@@ -17,6 +17,8 @@
 #define DOCTYPE_UNIVERSAL_NAME				"org.openfl.OpenFLPlugin"
 #define DOCTYPE_DESCRIPTION					"Create a new FLA file (*.fla) in the Flash Document window for use with OpenFL, enabling support for Windows, Mac, Linux, iOS, Android, BlackBerry, Firefox OS, Flash, HTML5 and other targets from a single codebase."
 
+/* The value of RUNTIME_FOLDER_NAME must be the name of the runtime folder present in EclipseProject/ExtensionContent. */
+#define RUNTIME_FOLDER_NAME                 "OpenFLPlugin"
 
 namespace OpenFL
 {

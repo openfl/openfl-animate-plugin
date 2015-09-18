@@ -1,4 +1,5 @@
 #include "OutputWriter.h"
+#include "PluginConfiguration.h"
 
 #include <cstring>
 #include <cmath>
@@ -20,6 +21,11 @@
 #include "GraphicFilter/IGradientBevelFilter.h"
 #include "GraphicFilter/IGradientGlowFilter.h"
 #include "Utils/ILinearColorGradient.h"
+#include <math.h>
+
+#ifdef _WINDOWS
+#include "Windows.h"
+#endif
 
 namespace OpenFL
 {
@@ -36,30 +42,30 @@ namespace OpenFL
         "<!DOCTYPE html>\r\n \
         <html>\r\n \
         <head> \r\n\
-            <script src=\"cjs/openfl-2013.12.12.min.js\"></script> \r\n\
-            <script src=\"cjs/movieclip-0.7.1.min.js\"></script> \r\n\
-            <script src=\"cjs/easeljs-0.7.0.min.js\"></script> \r\n\
-            <script src=\"cjs/tweenjs-0.5.1.min.js\"></script> \r\n\
-            <script src=\"cjs/preloadjs-0.4.1.min.js\"></script> \r\n\
+            <script src=\"%s/cjs/createjs-2013.12.12.min.js\"></script> \r\n\
+            <script src=\"%s/cjs/movieclip-0.7.1.min.js\"></script> \r\n\
+            <script src=\"%s/cjs/easeljs-0.7.0.min.js\"></script> \r\n\
+            <script src=\"%s/cjs/tweenjs-0.5.1.min.js\"></script> \r\n\
+            <script src=\"%s/cjs/preloadjs-0.4.1.min.js\"></script> \r\n\
            \r\n\
-            <script src=\"dist/jquery-1.10.2.min.js\"></script> \r\n\
-            <script src=\"runtime/resourcemanager.js\"></script> \r\n \
-            <script src=\"runtime/utils.js\"></script>     \r\n\
-            <script src=\"runtime/timelineanimator.js\"></script>    \r\n\
-            <script src=\"runtime/player.js\"></script>     \r\n\
+            <script src=\"%s/dist/jquery-1.10.2.min.js\"></script> \r\n\
+            <script src=\"%s/runtime/resourcemanager.js\"></script> \r\n \
+            <script src=\"%s/runtime/utils.js\"></script>     \r\n\
+            <script src=\"%s/runtime/timelineanimator.js\"></script>    \r\n\
+            <script src=\"%s/runtime/player.js\"></script>     \r\n\
             \r\n\
             <script type=\"text/javascript\"> \r\n\
             \r\n\
-            var loader = new openfl.LoadQueue(false); \r\n\
+            var loader = new createjs.LoadQueue(false); \r\n\
             loader.addEventListener(\"complete\", handleComplete); \r\n\
-            loader.loadManifest(\"./images/B.png\"); \r\n\
+            loader.loadManifest(\"./%s/images/B.png\"); \r\n\
             function handleComplete() \r\n\
                 { \r\n\
                 $(document).ready(function() { \r\n\
                 \r\n\
                 \r\n\
                     var canvas = document.getElementById(\"canvas\"); \r\n\
-                    var stage = new openfl.Stage(canvas);         \r\n\
+                    var stage = new createjs.Stage(canvas);         \r\n\
                     //pass FPS and use that in the player \r\n\
                     init(stage, \"%s\", %d);             \r\n\
                 }); \r\n\
@@ -109,14 +115,26 @@ namespace OpenFL
     {
         FCM::U_Int32 backColor;
 
-        m_HTMLOutput = new char[strlen(htmlOutput) + FILENAME_MAX + 50];
+        m_HTMLOutput = new char[strlen(htmlOutput) + FILENAME_MAX + (11 * strlen(RUNTIME_FOLDER_NAME)) + 50];
         if (m_HTMLOutput == NULL)
         {
             return FCM_MEM_NOT_AVAILABLE;
         }
 
         backColor = (background.red << 16) | (background.green << 8) | (background.blue);
-        sprintf(m_HTMLOutput, htmlOutput, m_outputJSONFileName.c_str(), fps, stageWidth, stageHeight, backColor);
+        sprintf(m_HTMLOutput, htmlOutput, 
+            RUNTIME_FOLDER_NAME, 
+            RUNTIME_FOLDER_NAME, 
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            RUNTIME_FOLDER_NAME,
+            m_outputJSONFileName.c_str(), fps, stageWidth, stageHeight, backColor);
 
         return FCM_SUCCESS;
     }
@@ -232,10 +250,11 @@ namespace OpenFL
         const DOM::Utils::MATRIX2D& matrix,
         FCM::S_Int32 height, 
         FCM::S_Int32 width,
-        std::string& name,
+        const std::string& libPathName,
         DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
+        std::string name;
         JSONNode bitmapElem(JSON_NODE);
         std::string bitmapPath;
         std::string bitmapName;
@@ -249,16 +268,29 @@ namespace OpenFL
         std::string bitmapRelPath;
         std::string bitmapExportPath = m_outputImageFolder + "/";
             
+        FCM::Boolean alreadyExported = GetImageExportFileName(libPathName, name);
+        if (!alreadyExported)
+        {
+            if (!m_imageFolderCreated)
+            {
+                res = Utils::CreateDir(m_outputImageFolder, m_pCallback);
+                if (!(FCM_SUCCESS_CODE(res)))
+                {
+                    Utils::Trace(m_pCallback, "Output image folder (%s) could not be created\n", m_outputImageFolder.c_str());
+                    return res;
+                }
+                m_imageFolderCreated = true;
+            }
+            CreateImageFileName(libPathName, name);
+            SetImageExportFileName(libPathName, name);
+        }
+
         bitmapExportPath += name;
             
         bitmapRelPath = "./";
         bitmapRelPath += IMAGE_FOLDER;
         bitmapRelPath += "/";
         bitmapRelPath += name;
-
-        res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
-        ASSERT(FCM_SUCCESS_CODE(res));
-
 
         res = m_pCallback->GetService(DOM::FLA_BITMAP_SERVICE, pUnk.m_Ptr);
         ASSERT(FCM_SUCCESS_CODE(res));
@@ -616,13 +648,14 @@ namespace OpenFL
         FCM::U_Int32 resId,
         FCM::S_Int32 height, 
         FCM::S_Int32 width,
-        const std::string& name,
+        const std::string& libPathName,
         DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
         JSONNode bitmapElem(JSON_NODE);
         std::string bitmapPath;
         std::string bitmapName;
+        std::string name;
 
         bitmapElem.set_name("image");
         
@@ -634,6 +667,23 @@ namespace OpenFL
         std::string bitmapRelPath;
         std::string bitmapExportPath = m_outputImageFolder + "/";
             
+        FCM::Boolean alreadyExported = GetImageExportFileName(libPathName, name);
+        if (!alreadyExported)
+        {
+            if (!m_imageFolderCreated)
+            {
+                res = Utils::CreateDir(m_outputImageFolder, m_pCallback);
+                if (!(FCM_SUCCESS_CODE(res)))
+                {
+                    Utils::Trace(m_pCallback, "Output image folder (%s) could not be created\n", m_outputImageFolder.c_str());
+                    return res;
+                }
+                m_imageFolderCreated = true;
+            }
+            CreateImageFileName(libPathName, name);
+            SetImageExportFileName(libPathName, name);
+        }
+        
         bitmapExportPath += name;
             
         bitmapRelPath = "./";
@@ -704,23 +754,41 @@ namespace OpenFL
 
     FCM::Result JSONOutputWriter::DefineSound(
             FCM::U_Int32 resId, 
-            const std::string& name, 
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem)
     {
         FCM::Result res;
         JSONNode soundElem(JSON_NODE);
         std::string soundPath;
         std::string soundName;
+        std::string name;
+
         soundElem.set_name("sound");
         soundElem.push_back(JSONNode(("charid"), OpenFL::Utils::ToString(resId)));
+        
         FCM::AutoPtr<FCM::IFCMUnknown> pUnk;
         std::string soundRelPath;
         std::string soundExportPath = m_outputSoundFolder + "/";
+
+        if (!m_soundFolderCreated)
+        {
+            res = Utils::CreateDir(m_outputSoundFolder, m_pCallback);
+            if (!(FCM_SUCCESS_CODE(res)))
+            {
+                Utils::Trace(m_pCallback, "Output sound folder (%s) could not be created\n", m_outputSoundFolder.c_str());
+                return res;
+            }
+            m_soundFolderCreated = true;
+        }
+        
+        CreateSoundFileName(libPathName, name);
         soundExportPath += name;
+
         soundRelPath = "./";
         soundRelPath += SOUND_FOLDER;
         soundRelPath += "/";
         soundRelPath += name;
+
         res = m_pCallback->GetService(DOM::FLA_SOUND_SERVICE, pUnk.m_Ptr);
         ASSERT(FCM_SUCCESS_CODE(res));
         FCM::AutoPtr<DOM::Service::Sound::ISoundExportService> soundExportService = pUnk;
@@ -734,8 +802,10 @@ namespace OpenFL
             ASSERT(pCalloc.m_Ptr != NULL);
             pCalloc->Free(pFilePath);
         }
+        
         soundElem.push_back(JSONNode(("soundPath"), soundRelPath)); 
         m_pSoundArray->push_back(soundElem);
+        
         return FCM_SUCCESS;
     }
 
@@ -745,7 +815,11 @@ namespace OpenFL
           m_pathArray(NULL),
           m_pathElem(NULL),
           m_firstSegment(false),
-          m_HTMLOutput(NULL)
+          m_HTMLOutput(NULL),
+          m_imageFileNameLabel(0),
+          m_soundFileNameLabel(0),
+          m_imageFolderCreated(false),
+          m_soundFolderCreated(false)
     {
         m_pRootNode = new JSONNode(JSON_NODE);
         ASSERT(m_pRootNode);
@@ -804,6 +878,108 @@ namespace OpenFL
         return FCM_SUCCESS;
     }
 
+    FCM::Result JSONOutputWriter::CreateImageFileName(const std::string& libPathName, std::string& name)
+    {
+        std::string str;
+        size_t pos;
+        std::string fileLabel;
+
+        fileLabel = Utils::ToString(m_imageFileNameLabel);
+        name = "Image" + fileLabel;
+        m_imageFileNameLabel++;
+
+        str = libPathName;
+
+        // DOM APIs do not provide a way to get the compression of the image.
+        // For time being, we will use the extension of the library item name.
+        pos = str.rfind(".");
+        if (pos != std::string::npos)
+        {
+            if (str.substr(pos + 1) == "jpg")
+            {
+                name += ".jpg";
+            }
+            else if (str.substr(pos + 1) == "png")
+            {
+                name += ".png";
+            }
+            else
+            {
+                name += ".png";
+            }
+        }
+        else
+        {
+            name += ".png";
+        }
+
+        return FCM_SUCCESS;
+    }
+
+
+    FCM::Result JSONOutputWriter::CreateSoundFileName(const std::string& libPathName, std::string& name)
+    {
+        std::string str;
+        size_t pos;
+        std::string fileLabel;
+
+        fileLabel = Utils::ToString(m_soundFileNameLabel);
+        name = "Sound" + fileLabel;
+        m_soundFileNameLabel++;
+
+        str = libPathName;
+
+        // DOM APIs do not provide a way to get the compression of the sound.
+        // For time being, we will use the extension of the library item name.
+        pos = str.rfind(".");
+        if (pos != std::string::npos)
+        {
+            if (str.substr(pos + 1) == "wav")
+            {
+                name += ".WAV";
+            }
+            else if (str.substr(pos + 1) == "mp3")
+            {
+                name += ".MP3";
+            }
+            else
+            {
+                name += ".MP3";
+            }
+        }
+        else
+        {
+            name += ".MP3";
+        }
+
+        return FCM_SUCCESS;
+    }
+
+
+    FCM::Boolean JSONOutputWriter::GetImageExportFileName(const std::string& libPathName, std::string& name)
+    {
+        std::map<std::string, std::string>::iterator it = m_imageMap.find(libPathName);
+
+        name = "";
+
+        if (it != m_imageMap.end())
+        {
+            // Image already exported
+            name = it->second;
+            return true;
+        }
+
+        return false;
+    }
+
+
+    void JSONOutputWriter::SetImageExportFileName(const std::string& libPathName, const std::string& name)
+    {
+        // Assumption: Name is not already present in the map
+        ASSERT(m_imageMap.find(libPathName) == m_imageMap.end());
+
+        m_imageMap.insert(std::pair<std::string, std::string>(libPathName, name));
+    }
     /* -------------------------------------------------- JSONTimelineWriter */
 
     FCM::Result JSONTimelineWriter::PlaceObject(
@@ -886,6 +1062,8 @@ namespace OpenFL
 
         return res;
     }
+
+
     FCM::Result JSONTimelineWriter::RemoveObject(
         FCM::U_Int32 objectId)
     {
@@ -1601,7 +1779,7 @@ namespace OpenFL
         FCM::U_Int32 objectId,
         const DOM::Utils::COLOR_MATRIX& colorMatrix)
     {
-		// add code to write the color transform 
+        // add code to write the color transform 
         return FCM_SUCCESS;
     }
 
@@ -1682,7 +1860,7 @@ namespace OpenFL
         return FCM_SUCCESS;
     }
 
-	
+
     JSONTimelineWriter::JSONTimelineWriter(FCM::PIFCMCallback pCallback) :
         m_pCallback(pCallback)
     {

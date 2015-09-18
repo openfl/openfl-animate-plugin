@@ -11,7 +11,6 @@
 #include <iostream>
 #include <fstream>
 
-
 #include "Version.h"
 #include "FCMTypes.h"
 #include "FCMPluginInterface.h"
@@ -29,8 +28,6 @@
 #include "PluginConfiguration.h"
 
 /* -------------------------------------------------- Forward Decl */
-
-using namespace std;
 
 using namespace FCM;
 using namespace Publisher;
@@ -77,6 +74,8 @@ namespace DOM
     #define OUTPUT_FILE_EXTENSION       "html"
 #endif
 
+#define MAX_RETRY_ATTEMPT               10
+
 
 /* -------------------------------------------------- Structs / Unions */
 
@@ -112,8 +111,6 @@ namespace OpenFL
 
         ~CPublisher();
 
-		//static std::ofstream outputFileStream;
-
     private:
 
         bool ReadString(
@@ -138,11 +135,12 @@ namespace OpenFL
 
         FCM::Result Init();
 
-        void LaunchBrowser(const std::string& outputFileName);
+        FCM::Result ShowPreview(const std::string& outFile);
 
         FCM::Result ExportLibraryItems(FCM::FCMListPtr pLibraryItemList);
 
-		FCM::Result ExportLibraryItems(FCM::FCMListPtr pLibraryItemList, const PIFCMDictionary pDictPublishSettings);
+        FCM::Result CopyRuntime(const std::string& outputFolder);
+
     private:
 
         AutoPtr<IFrameCommandGenerator> m_frameCmdGeneratorService;
@@ -225,10 +223,6 @@ namespace OpenFL
         FCM::Result ExportBitmapFillStyle(
             DOM::FillStyle::IBitmapFillStyle* pBitmapFillStyle);
 
-        FCM::Result CreateImageFileName(DOM::ILibraryItem* pLibItem, std::string& name);
-
-        FCM::Result CreateSoundFileName(DOM::ILibraryItem* pLibItem, std::string& name);
-
         FCM::Result GetFontInfo(DOM::FrameElement::ITextStyle* pTextStyleItem, std::string& name,FCM::U_Int16 fontSize);
 
         FCM::Result HasFancyStrokes(DOM::FrameElement::PIShape pShape, FCM::Boolean& hasFancy); 
@@ -242,10 +236,6 @@ namespace OpenFL
         IOutputWriter* m_pOutputWriter;
 
         std::vector<FCM::U_Int32> m_resourceList;
-
-        FCM::U_Int32 m_imageFileNameLabel;
-
-        FCM::U_Int32 m_soundFileNameLabel;
 
         std::vector<std::string> m_resourceNames;
     };

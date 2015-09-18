@@ -82,7 +82,7 @@ namespace OpenFL
             const DOM::Utils::MATRIX2D& matrix,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            std::string& name,
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
 
         // Start Linear Gradient fill style definition
@@ -155,7 +155,7 @@ namespace OpenFL
             FCM::U_Int32 resId,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            const std::string&  name,
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
 
         // Define a classic text
@@ -169,7 +169,7 @@ namespace OpenFL
         // Define Sound
         virtual FCM::Result DefineSound(
             FCM::U_Int32 resId, 
-            const std::string& name, 
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem) = 0;
     };
 

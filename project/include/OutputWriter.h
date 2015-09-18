@@ -9,6 +9,7 @@
 
 #include "IOutputWriter.h"
 #include <string>
+#include <map>
 
 /* -------------------------------------------------- Forward Decl */
 
@@ -110,7 +111,7 @@ namespace OpenFL
             const DOM::Utils::MATRIX2D& matrix,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            std::string& name,
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem);
 
         // Start Linear Gradient fill style definition
@@ -183,7 +184,7 @@ namespace OpenFL
             FCM::U_Int32 resId,
             FCM::S_Int32 height, 
             FCM::S_Int32 width,
-            const std::string& name,
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem);
 
         // Define text
@@ -196,7 +197,7 @@ namespace OpenFL
 
         virtual FCM::Result DefineSound(
             FCM::U_Int32 resId, 
-            const std::string& name, 
+            const std::string& libPathName,
             DOM::LibraryItem::PIMediaItem pMediaItem);
         JSONOutputWriter(FCM::PIFCMCallback pCallback);
 
@@ -209,6 +210,16 @@ namespace OpenFL
         virtual FCM::Result EndDefinePath();
 
     private:
+        
+        FCM::Result CreateImageFileName(const std::string& libPathName, std::string& name);
+
+        FCM::Result CreateSoundFileName(const std::string& libPathName, std::string& name);
+
+        FCM::Boolean GetImageExportFileName(const std::string& libPathName, std::string& name);
+
+        void SetImageExportFileName(const std::string& libPathName, const std::string& name);
+
+    private:
 
         JSONNode* m_pRootNode;
 
@@ -217,6 +228,7 @@ namespace OpenFL
         JSONNode* m_pTimelineArray;
 
         JSONNode* m_pBitmapArray;
+
         JSONNode* m_pSoundArray;
 
         JSONNode* m_pTextArray;
@@ -246,9 +258,20 @@ namespace OpenFL
         std::string m_outputImageFolder;
 
         std::string m_outputSoundFolder;
+
         char* m_HTMLOutput;
 
         FCM::PIFCMCallback m_pCallback;
+
+        FCM::U_Int32 m_imageFileNameLabel;
+
+        FCM::U_Int32 m_soundFileNameLabel;
+
+        std::map<std::string, std::string> m_imageMap;
+        
+        FCM::Boolean m_imageFolderCreated;
+        
+        FCM::Boolean m_soundFolderCreated;
     };
 
 

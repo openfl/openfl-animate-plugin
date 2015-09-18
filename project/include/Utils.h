@@ -18,6 +18,10 @@
 
 /* -------------------------------------------------- Forward Decl */
 
+#ifdef USE_HTTP_SERVER
+    struct sockaddr_in;
+#endif // USE_HTTP_SERVER
+
 
 /* -------------------------------------------------- Enums */
 
@@ -45,7 +49,24 @@
 #else
 #define LOG(x) 
 #endif
+
+#ifdef USE_HTTP_SERVER
+    #ifdef _WINDOWS
+        #define CLOSE_SOCKET(sock) closesocket(sock)
+    #else
+        #ifdef _MAC
+            #define CLOSE_SOCKET(sock) close(sock)
+        #endif
+    #endif
+#endif
+
 /* -------------------------------------------------- Structs / Unions */
+
+#ifdef USE_HTTP_SERVER
+    #ifdef _MAC
+        typedef int SOCKET;
+    #endif
+#endif // USE_HTTP_SERVER
 
 
 /* -------------------------------------------------- Class Decl */
@@ -97,6 +118,8 @@ namespace OpenFL
 
         static void GetModuleFilePath(std::string& path, FCM::PIFCMCallback pCallback);
         
+        static FCM::Result CreateDir(const std::string& path, FCM::PIFCMCallback pCallback);
+
         static FCM::AutoPtr<FCM::IFCMCalloc> GetCallocService(FCM::PIFCMCallback pCallback);
         
         static FCM::AutoPtr<FCM::IFCMStringUtils> GetStringUtilsService(FCM::PIFCMCallback pCallback);
@@ -109,10 +132,24 @@ namespace OpenFL
 
         static void Log(const char* fmt, ...);
 
-        static void LaunchBrowser(const std::string& outputFileName);
-
         static void OpenFStream(const std::string& outputFileName, std::fstream &file, std::ios_base::openmode mode, FCM::PIFCMCallback pCallback);
 
+        static FCM::Result CopyDir(const std::string& srcFolder, const std::string& dstFolder, FCM::PIFCMCallback pCallback);
+
+        static FCM::Result Remove(const std::string& folder, FCM::PIFCMCallback pCallback);
+
+#ifdef USE_HTTP_SERVER
+
+        static void LaunchBrowser(const std::string& outputFileName, int port, FCM::PIFCMCallback pCallback);
+		
+        static int GetUnusedLocalPort();
+
+    private:
+
+        static void InitSockAddr(sockaddr_in* sockAddr);
+
+#endif
+	
     };
 };
 
