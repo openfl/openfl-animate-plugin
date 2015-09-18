@@ -69,7 +69,7 @@ namespace DOM
 /* -------------------------------------------------- Macros / Constants */
 
 #ifdef USE_SWF_EXPORTER_SERVICE
-    #define OUTPUT_FILE_EXTENSION       "swf"
+    #define OUTPUT_FILE_EXTENSION       "bundle"
 #else
     #define OUTPUT_FILE_EXTENSION       "html"
 #endif

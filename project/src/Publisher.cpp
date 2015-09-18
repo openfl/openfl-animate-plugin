@@ -133,6 +133,42 @@ namespace OpenFL
 
         //Utils::Trace(GetCallback(), "Creating output file : %s\n", outFile.c_str());
 
+        res = Utils::CreateDir(outFile, GetCallback());
+        if (FCM_FAILURE_CODE(res))
+        {
+            Utils::Trace(GetCallback(), "ERROR: Could not create directory \"%s\".\n", outFile);
+            return res;
+        }
+
+        // Write "include.xml" file
+
+        std::fstream fileWriter;
+        Utils::OpenFStream(outFile + "\\include.xml", fileWriter, std::ios_base::out, GetCallback());
+
+        std::string optionGenerate;
+        std::string optionPreload;
+
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"generate", optionGenerate);
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"preload", optionPreload);
+
+        if (optionGenerate.empty()) optionGenerate = "true";
+        if (optionPreload.empty()) optionPreload = "true";
+
+        if (fileWriter)
+        {
+            fileWriter << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+            fileWriter << "<bundle>\n";
+            fileWriter << "	\n";
+            fileWriter << "	<haxelib name=\"swf\" />\n";
+            fileWriter << "	\n";
+            fileWriter << "	<library path=\"library.swf\" generate=\"" << optionGenerate << "\" preload=\"" << optionPreload << "\" />\n";
+            fileWriter << "	\n";
+            fileWriter << "</bundle>";
+            fileWriter.close ();
+        }
+
+        outFile += "\\library.swf";
+
 #ifdef USE_SWF_EXPORTER_SERVICE
 
         // Use the SWF Exporter Service to export to a SWF

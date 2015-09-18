@@ -90,7 +90,23 @@ function setUI(uiState)
 			document.getElementById("myCheck3").checked = false;
 		}
 		
-		if(uiState.data["SWF.PublishSettings.EnableSizeReport"] == "true")
+		if(uiState.data["generate"] == "true")
+		{
+			document.getElementById("myCheck4").checked = true;
+		}else
+		{
+			document.getElementById("myCheck4").checked = false;
+		}
+		
+		if(uiState.data["preload"] == "true")
+		{
+			document.getElementById("myCheck5").checked = true;
+		}else
+		{
+			document.getElementById("myCheck5").checked = false;
+		}
+		
+		/*if(uiState.data["SWF.PublishSettings.EnableSizeReport"] == "true")
 		{
 			document.getElementById("myCheck4").checked = true;
 		}else
@@ -105,7 +121,7 @@ function setUI(uiState)
 		}else
 		{
 			document.getElementById("myCheck5").checked = false;
-		}
+		}*/
 	}
 }
 function publish_callback()
@@ -158,6 +174,23 @@ function serializeUI()
 		pubSettings["PublishSettings.IncludeInvisibleLayer"] = "false";
 	}
 	
+	if(document.getElementById("myCheck4").checked == true)
+	{
+		pubSettings["generate"] = "true";
+	}
+	else
+	{
+		pubSettings["generate"] = "false";
+	}
+	
+	if(document.getElementById("myCheck5").checked == true)
+	{
+		pubSettings["preload"] = "true";
+	}
+	else
+	{
+		pubSettings["preload"] = "false";
+	}
 	
 	event.scope = "APPLICATION";
 	event.type = "com.adobe.events.flash.extension.savestate";
@@ -234,7 +267,7 @@ function onPublish() {
 }
 
 function opsd() {
-   evalScript("fl.browseForFileURL('save','Publish to SWF','SWF','swf');",open_callback);
+   evalScript("fl.browseForFileURL('save','Publish','Bundle','bundle');",open_callback);
 }
 
 /*
@@ -260,6 +293,12 @@ function imsd() {
 			<summary>ADVANCED</summary>
 				<p>
 					<input type="checkbox" id="myCheck3" checked>Include hidden layers<br>
+				</p>
+				<p>
+					<input type="checkbox" id="myCheck4" checked>Generate Haxe classes<br>
+				</p>
+				<p>
+					<input type="checkbox" id="myCheck5" checked>Automatically preload asset library<br>
 				</p>
 	</div>
 
