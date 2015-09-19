@@ -3,3 +3,7 @@ project/obj
 OpenFLPlugin/plugin/lib/mac/OpenFLPlugin.fcm.plugin/Contents/MacOS
 OpenFLPlugin/plugin/lib/win/OpenFLPlugin.fcm
 project/openflplugin
+OpenFLPlugin.zxp
+ZXPSignCmd
+ZXPSignCmd.exe
+.rnd
