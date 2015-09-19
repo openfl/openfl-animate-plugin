@@ -8,7 +8,7 @@
 	</ExtensionList>
 	<ExecutionEnvironment>
 		<HostList>
-			<Host Name="FLPR" Version="14.0" />
+			<Host Name="FLPR" Version="14.1" />
 		</HostList>
 		<LocaleList>
 			<Locale Code="All" />
