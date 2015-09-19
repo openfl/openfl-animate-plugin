@@ -1,1 +1,1 @@
-This document can be used to author content for sample runtime.
+Create a new FLA file (*.fla) in the Flash Document window. The Publish Settings will be set for OpenFL. Use FLA files to add assets to OpenFL projects published for HTML5, Adobe Flash Player and native desktop and mobile platforms.
