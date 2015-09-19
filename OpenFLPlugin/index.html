@@ -66,7 +66,7 @@ function setUI(uiState)
 	{
 		document.getElementById("of").value = uiState.data.out_file;
 		
-		if(uiState.data["SWF.PublishSettings.EnableDeblockingFilter"] == "true")
+		/*if(uiState.data["SWF.PublishSettings.EnableDeblockingFilter"] == "true")
 		{
 			document.getElementById("myCheck1").checked = true;
 		}else
@@ -80,7 +80,7 @@ function setUI(uiState)
 		}else
 		{
 			document.getElementById("myCheck2").checked = false;
-		}
+		}*/
 		
 		if(uiState.data["PublishSettings.IncludeInvisibleLayer"] == "true")
 		{
@@ -105,6 +105,18 @@ function setUI(uiState)
 		{
 			document.getElementById("myCheck5").checked = false;
 		}
+		
+		if(uiState.data["outputType"] == "swf")
+		{
+			document.getElementById("selectOutputType").selectedIndex = 1;
+		}
+		else if (uiState.data["outputType"] == "swflite")
+		{
+			document.getElementById("selectOutputType").selectedIndex = 2;
+		}
+		
+		if (uiState.data["classPrefix"]) document.getElementById("classPrefix").value = uiState.data["classPrefix"];
+		if (uiState.data["libraryID"]) document.getElementById("libraryID").value = uiState.data["libraryID"];
 		
 		/*if(uiState.data["SWF.PublishSettings.EnableSizeReport"] == "true")
 		{
@@ -191,6 +203,17 @@ function serializeUI()
 	{
 		pubSettings["preload"] = "false";
 	}
+	
+	switch (document.getElementById("selectOutputType").selectedIndex) {
+		
+		case 1: pubSettings["outputType"] = "swf"; break;
+		case 2: pubSettings["outputType"] = "swflite"; break;
+		default: pubSettings["outputType"] = ""; break;
+		
+	}
+	
+	pubSettings["classPrefix"] = document.getElementById("classPrefix").value.toString();
+	pubSettings["libraryID"] = document.getElementById("libraryID").value.toString();
 	
 	event.scope = "APPLICATION";
 	event.type = "com.adobe.events.flash.extension.savestate";
@@ -280,26 +303,58 @@ function imsd() {
 </script>
 
 <body onLoad="onLoaded()">
-    <div id="container">
-	<p>
-		<label class="myLabel">Output File :</label>
-        <input type="text"  id="of">
-        <input id="OPShowOpenDialog" type="image" src="folderOpen.png" style="left:10px" onclick="opsd()" >
-        <br/>
-	</p>
 	
-	<p>
-		<details open>
-			<summary>ADVANCED</summary>
+	<div id="container">
+		
+		<p>
+			<label class="myLabel">Output file:</label>
+			<input type="text" id="of">
+			<input id="OPShowOpenDialog" type="image" src="folderOpen.png" style="left:10px" onclick="opsd()" >
+			<br/>
+		</p>
+		
+		<p>
+			<details open style="margin: 0 0 0 18px">
+				<summary>OPTIONS</summary>
 				<p>
-					<input type="checkbox" id="myCheck3" checked>Include hidden layers<br>
+					<label class="myLabel">Output type:</label>
+					<select name="selectOutputType" id="selectOutputType">
+						<option value="default">(default)</option>
+						<option value="swf">SWF</option>
+						<option value="swflite">SWFLite</option>
+					</select>
+				</p>
+				<p>
+					<input type="checkbox" id="myCheck5" checked>Preload asset library<br>
 				</p>
 				<p>
 					<input type="checkbox" id="myCheck4" checked>Generate Haxe classes<br>
 				</p>
 				<p>
-					<input type="checkbox" id="myCheck5" checked>Automatically preload asset library<br>
+					<label class="myLabel">Class prefix:</label>
+					<input type="text" id="classPrefix">
+					<br/>
 				</p>
+				<p>
+					<label class="myLabel">Library ID:</label>
+					<input type="text" id="libraryID">
+					<br/>
+				</p>
+				
+			</details>
+		</p>
+		
+		<br />
+		
+		<p>
+			<details open style="margin: 0 0 0 18px">
+				<summary>ADVANCED</summary>
+				<p>
+					<input type="checkbox" id="myCheck3" checked>Include hidden layers<br>
+				</p>
+			</details>
+		</p>
+		
 	</div>
 
     <button id="publish" onclick="onPublish()">Publish</button>

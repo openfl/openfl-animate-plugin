@@ -146,10 +146,21 @@ namespace OpenFL
         Utils::OpenFStream(outFile + "\\include.xml", fileWriter, std::ios_base::out, GetCallback());
 
         std::string optionGenerate;
+        std::string optionID;
+        std::string optionPrefix;
         std::string optionPreload;
+        std::string optionType;
 
         ReadString(pDictPublishSettings, (FCM::StringRep8)"generate", optionGenerate);
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"libraryID", optionID);
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"classPrefix", optionPrefix);
         ReadString(pDictPublishSettings, (FCM::StringRep8)"preload", optionPreload);
+        ReadString(pDictPublishSettings, (FCM::StringRep8)"outputType", optionType);
+
+        if (optionID.empty())
+        {
+            Utils::GetFileNameWithoutExtension(outFile, optionID);
+        }
 
         if (optionGenerate.empty()) optionGenerate = "true";
         if (optionPreload.empty()) optionPreload = "true";
@@ -161,7 +172,12 @@ namespace OpenFL
             fileWriter << "	\n";
             fileWriter << "	<haxelib name=\"swf\" />\n";
             fileWriter << "	\n";
-            fileWriter << "	<library path=\"library.swf\" generate=\"" << optionGenerate << "\" preload=\"" << optionPreload << "\" />\n";
+            fileWriter << "	<library path=\"library.swf\" id=\"" << optionID << "\"";
+
+            if (!optionType.empty()) fileWriter << " type=\"" << optionType << "\"";
+            if (!optionPrefix.empty()) fileWriter << " prefix=\"" << optionPrefix << "\"";
+
+            fileWriter << " generate=\"" << optionGenerate << "\" preload=\"" << optionPreload << "\" />\n";
             fileWriter << "	\n";
             fileWriter << "</bundle>";
             fileWriter.close ();
