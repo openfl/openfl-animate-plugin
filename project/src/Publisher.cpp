@@ -143,7 +143,7 @@ namespace OpenFL
         // Write "include.xml" file
 
         std::fstream fileWriter;
-        Utils::OpenFStream(outFile + "\\include.xml", fileWriter, std::ios_base::out, GetCallback());
+        Utils::OpenFStream(outFile + "/include.xml", fileWriter, std::ios_base::out, GetCallback());
 
         std::string optionGenerate;
         std::string optionID;
@@ -183,7 +183,7 @@ namespace OpenFL
             fileWriter.close ();
         }
 
-        outFile += "\\library.swf";
+        outFile += "/library.swf";
 
 #ifdef USE_SWF_EXPORTER_SERVICE
 
