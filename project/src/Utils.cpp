@@ -14,9 +14,9 @@
 #ifdef USE_HTTP_SERVER    
     #include <sys/socket.h>
     #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <sys/stat.h>    
-#endif    
+    #include <arpa/inet.h>   
+#endif
+    #include <sys/stat.h>
     #include <copyfile.h>
 #endif
 

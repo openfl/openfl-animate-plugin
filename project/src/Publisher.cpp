@@ -136,7 +136,7 @@ namespace OpenFL
         res = Utils::CreateDir(outFile, GetCallback());
         if (FCM_FAILURE_CODE(res))
         {
-            Utils::Trace(GetCallback(), "ERROR: Could not create directory \"%s\".\n", outFile);
+            Utils::Trace(GetCallback(), "ERROR: Could not create directory \"%s\".\n", outFile.c_str());
             return res;
         }
 
