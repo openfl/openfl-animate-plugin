@@ -32,7 +32,7 @@ Making changes to the "Publish Settings" dialog will be available the next time 
 Mac
 ---
 
-In order to use a development version, you need to enable "PlayerDebugMode".
+In order to use a development copy of the plugin, you need to enable "PlayerDebugMode".
 
 Edit "~/Library/Preferences/com.adobe.CSXS.6.plist" then add a key called "PlayerDebugMode" with a string value of "1"
 
