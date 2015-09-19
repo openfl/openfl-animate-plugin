@@ -71,7 +71,7 @@
 		<Property name ="ImportEmbeddedSWF" supported="false"/>
 	</Feature>
 	<Feature name="3D" supported="false" />
-	<Feature name="ScriptLinkage" supported="false">
+	<Feature name="ScriptLinkage" supported="true">
 		<Property name ="Declaration" supported="true"/>
 		<Property name ="Definition" supported="true"/>
 	</Feature>
