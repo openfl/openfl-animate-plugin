@@ -15,7 +15,6 @@
 		</LocaleList>
 		<RequiredRuntimeList>
 			<RequiredRuntime Name="CSXS" Version="4.0" />
-
 		</RequiredRuntimeList>
 	</ExecutionEnvironment>
 	<DispatchInfoList>
