@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<ExtensionManifest Version="4.0" ExtensionBundleId="org.openfl.OpenFLExtension" ExtensionBundleVersion="1.0.0"
-		ExtensionBundleName="OpenFL Extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ExtensionManifest Version="4.0" ExtensionBundleId="org.openfl.OpenFLPlugin" ExtensionBundleVersion="1.0.0"
+		ExtensionBundleName="OpenFL Plugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<ExtensionList>
 		<Extension Id="org.openfl.OpenFLPlugin.PublishSettings" Version="1.0" />
 		<Extension Id="org.openfl.OpenFLPlugin" Version="1.0" />

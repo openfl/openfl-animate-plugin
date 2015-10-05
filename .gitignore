@@ -7,3 +7,5 @@ OpenFLPlugin.zxp
 ZXPSignCmd
 ZXPSignCmd.exe
 .rnd
+.staged-extension
+org.openfl.OpenFLPlugin.zxp
