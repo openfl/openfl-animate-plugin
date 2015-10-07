@@ -12,4 +12,4 @@ copy /y org.openfl.OpenFLPlugin.mxi .staged-extension\org.openfl.OpenFLPlugin.mx
 
 if exist "org.openfl.OpenFLPlugin.zxp" del /f org.openfl.OpenFLPlugin.zxp
 
-ZXPSignCmd -sign .staged-extension org.openfl.OpenFLPlugin.zxp certificate.p12 "%1"
+ZXPSignCmd -sign .staged-extension org.openfl.OpenFLPlugin.zxp certificate.p12 "%1" -tsa https://timestamp.geotrust.com/tsa
