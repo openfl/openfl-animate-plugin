@@ -176,7 +176,10 @@ function serializeUI()
     //   "FlashPlayer11.9"    
     //   "FlashPlayer12.0"
     //   "FlashPlayer13.0"
-		
+	
+	pubSettings["SWF.PublishSettings.PlayerVersion"] = "FlashPlayer13.0";
+	pubSettings["SWF.PublishSettings.ASVersion"] = "3";
+	
 	if(document.getElementById("myCheck3").checked == true)
 	{
 		pubSettings["PublishSettings.IncludeInvisibleLayer"] = "true";
