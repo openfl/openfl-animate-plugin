@@ -1,15 +1,15 @@
-OpenFL Flash Plugin
+OpenFL Animate Plugin
 ===================
 
-Adds OpenFL custom platform support to Flash Professional CC.
+Adds OpenFL custom platform support to Adobe Animate CC.
 
 
 Development Builds
 ==================
 
-Clone the OpenFL Flash Plugin repository:
+Clone the OpenFL Animate Plugin repository:
 
-    git clone https://github.com/openfl/openfl-flash-plugin --recursive
+    git clone https://github.com/openfl/openfl-animate-plugin --recursive
 
 
 Windows
@@ -21,12 +21,12 @@ Open `regedit` and browse to HKEY_CURRENT_USER\SOFTWARE\Adobe\CSXS.6. Create a S
 
 To compile the plugin, you need Haxe, HXCPP and Visual Studio C++ installed. You can use "build.bat" (included in the project) to build and install the plugin locally:
 
-    cd openfl-flash-plugin
+    cd openfl-animate-plugin
     build.bat
 
 You can use `build.bat clean` as well, if you want a clean build.
 
-Making changes to the "Publish Settings" dialog will be available the next time the dialog is opened. Making other changes usually requires closing and re-opening Flash Professional.
+Making changes to the "Publish Settings" dialog will be available the next time the dialog is opened. Making other changes usually requires closing and re-opening Animate.
 
 
 Mac
@@ -38,9 +38,9 @@ Edit "~/Library/Preferences/com.adobe.CSXS.6.plist" then add a key called "Playe
 
 To compile the plugin, you need Haxe, HXCPP and Xcode installed. You can use "build.sh" (included in the project) to build and install the plugin locally:
 
-    cd openfl-flash-plugin
+    cd openfl-animate-plugin
     ./build.sh
 
 You can use `./build.sh clean` as well, if you want a clean build.
 
-Making changes to the "Publish Settings" dialog will be available the next time the dialog is opened. Making other changes usually requires closing and re-opening Flash Professional.
+Making changes to the "Publish Settings" dialog will be available the next time the dialog is opened. Making other changes usually requires closing and re-opening Animate.
