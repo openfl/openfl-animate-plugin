@@ -170,8 +170,6 @@ namespace OpenFL
             fileWriter << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
             fileWriter << "<bundle>\n";
             fileWriter << "	\n";
-            fileWriter << "	<haxelib name=\"swf\" />\n";
-            fileWriter << "	\n";
             fileWriter << "	<library path=\"library.swf\" id=\"" << optionID << "\"";
 
             if (!optionType.empty()) fileWriter << " type=\"" << optionType << "\"";
