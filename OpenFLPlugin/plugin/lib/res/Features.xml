@@ -59,7 +59,7 @@
 			<Value name="SingleLine" supported="true"/>
 			<Value name="MultiLine" supported="true"/>
 			<Value name="MultiLineNoWrap" supported="true"/>
-			<Value name="Password" supported="false"/>
+			<Value name="Password" supported="true"/>
 		</Property>
 		<Property name="TextLinkage" supported="false"/>
 		<Property name="Scrollable" supported="false"/>
@@ -84,30 +84,30 @@
 		</Property>
 		<Property name="BlendModes" default="Normal" supported="true">
 			<Value name="Normal" supported="true"/>
-			<Value name="Layer" supported="false"/>
-			<Value name="Darken" supported="false"/>
-			<Value name="Add" supported="false"/>
-			<Value name="Multiply" supported="false"/>
-			<Value name="Lighten" supported="false"/>
-			<Value name="Screen" supported="false"/>
-			<Value name="Overlay" supported="false"/>
-			<Value name="HardLight" supported="false"/>
-			<Value name="Subtract" supported="false"/>
-			<Value name="Difference" supported="false"/>
-			<Value name="Invert" supported="false"/>
-			<Value name="Alpha" supported="false"/>
-			<Value name="Erase" supported="false"/>
+			<Value name="Layer" supported="true"/>
+			<Value name="Darken" supported="true"/>
+			<Value name="Add" supported="true"/>
+			<Value name="Multiply" supported="true"/>
+			<Value name="Lighten" supported="true"/>
+			<Value name="Screen" supported="true"/>
+			<Value name="Overlay" supported="true"/>
+			<Value name="HardLight" supported="true"/>
+			<Value name="Subtract" supported="true"/>
+			<Value name="Difference" supported="true"/>
+			<Value name="Invert" supported="true"/>
+			<Value name="Alpha" supported="true"/>
+			<Value name="Erase" supported="true"/>
 		</Property>
 		<Property name="ColorEffect" default="None" supported="true">
 			<Value name="None" supported="true"/>
-			<Value name="Brightness" supported="false"/>
-			<Value name="Tint" supported="false"/>
-			<Value name="Alpha" supported="false"/> 
-			<Value name="Advanced" supported="false"/>
+			<Value name="Brightness" supported="true"/>
+			<Value name="Tint" supported="true"/>
+			<Value name="Alpha" supported="true"/> 
+			<Value name="Advanced" supported="true"/>
 		</Property>
 		<Property name="Render" default="Original" supported="true">
 			<Value name="Original" supported="true"/>
-			<Value name="CacheAsBitmap" supported="false"/>
+			<Value name="CacheAsBitmap" supported="true"/>
 			<Value name="ExportAsBitmap" supported="true"/>
 		</Property>
 		<Property name="BitmapBackground" default="Transparent" supported="true">
@@ -120,7 +120,7 @@
 		</Property>
 	</Feature>
 	<Feature name="Filters" supported="true"/>
-	<Feature name="DropShadowFilter" supported="false">
+	<Feature name="DropShadowFilter" supported="true">
 		<Property name="Quality" default="Low" supported="true"/>
 		<Property name="Angle" default ="0.785" supported="true"/>  !--- measured in radians ----!
 		<Property name="Distance" default = "0" supported="true"/>
@@ -128,16 +128,16 @@
 		<Property name="Inner" default = "false" supported="true"/>
 		<Property name="HideObject" default = "false" supported="true"/>	
 	</Feature>
-	<Feature name="GlowFilter" supported="false">
+	<Feature name="GlowFilter" supported="true">
 		<Property name="Quality" default="Low" supported="true"/>
 		<Property name="Knockout" default = "false" supported="true"/>
 		<Property name="Inner" default = "false" supported="true"/>
 	</Feature>
-	<Feature name="BlurFilter" supported="false"/>
-	<Feature name="BevelFilter" supported="false"/>
-	<Feature name="GradientGlowFilter" supported="false"/>
-	<Feature name="GradientBevelFilter" supported="false"/>
-	<Feature name="AdjustColorFilter" supported="false"/>
+	<Feature name="BlurFilter" supported="true"/>
+	<Feature name="BevelFilter" supported="true"/>
+	<Feature name="GradientGlowFilter" supported="true"/>
+	<Feature name="GradientBevelFilter" supported="true"/>
+	<Feature name="AdjustColorFilter" supported="true"/>
 	<Feature name="Compiler" supported="false"/>
 	<Feature name="Video" supported="false"/>
 	<Feature name="FrameScript" supported="true"/>
