@@ -210,12 +210,17 @@ namespace OpenFL
         pCalloc->Free(outputFilePath);
         if (FCM_SUCCESS_CODE(res))
         {
+            if (IsPreviewNeeded(pDictConfig))
+            {
+                ShowPreview(outFile);
+            }
+            
             return res;
         }
         
         // Post-process the SWF
 
-#else
+#else // NOT USED
         DOM::Utils::COLOR color;
         FCM::U_Int32 stageHeight;
         FCM::U_Int32 stageWidth;
@@ -596,6 +601,12 @@ namespace OpenFL
             Utils::Trace(GetCallback(), "Failed to start web server\n");
             res = FCM_GENERAL_ERROR;
         }
+
+#else
+
+        //std::string fileName;
+        //Utils::GetFileName(outFile, fileName);
+        Utils::OpenFile(outFile, GetCallback());
 
 #endif // USE_HTTP_SERVER
 

@@ -138,6 +138,8 @@ namespace OpenFL
 
         static FCM::Result Remove(const std::string& folder, FCM::PIFCMCallback pCallback);
 
+        static void OpenFile(const std::string& outputFileName, FCM::PIFCMCallback pCallback);
+
 #ifdef USE_HTTP_SERVER
 
         static void LaunchBrowser(const std::string& outputFileName, int port, FCM::PIFCMCallback pCallback);

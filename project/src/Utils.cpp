@@ -593,6 +593,26 @@ namespace OpenFL
 #endif
         return FCM_SUCCESS;
     }
+    
+    void Utils::OpenFile(const std::string& outputFileName, FCM::PIFCMCallback pCallback)
+    {
+
+#ifdef _WINDOWS
+
+        std::wstring path;
+        path.assign(outputFileName.begin(), outputFileName.end());
+        ShellExecute(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+
+        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = GetCallocService(pCallback);
+        pCalloc->Free(portStr);
+#else
+
+        std::string str = "/usr/bin/open " + outputFileName;
+        popen(str.c_str(), "r");
+        
+#endif // _WINDOWS
+
+    }
 
 
 #ifdef USE_HTTP_SERVER
