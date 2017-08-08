@@ -601,10 +601,8 @@ namespace OpenFL
 
         std::wstring path;
         path.assign(outputFileName.begin(), outputFileName.end());
-        ShellExecute(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", path.c_str(), NULL, NULL, SW_SHOWNORMAL);
 
-        FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = GetCallocService(pCallback);
-        pCalloc->Free(portStr);
 #else
 
         std::string str = "/usr/bin/open " + outputFileName;
@@ -629,7 +627,7 @@ namespace OpenFL
         output += portStr;
         output += L"/";
         output += tail;
-        ShellExecute(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        ShellExecuteW(NULL, L"open", output.c_str(), NULL, NULL, SW_SHOWNORMAL);
 
         FCM::AutoPtr<FCM::IFCMCalloc> pCalloc = GetCallocService(pCallback);
         pCalloc->Free(portStr);
