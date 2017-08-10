@@ -4,6 +4,7 @@
 #include "xercesc/framework/MemBufInputSource.hpp"
 #include <fstream>
 #include <sstream>
+#include <memory>
 
 #include "Application/Service/IOutputConsoleService.h"
 #include "PluginConfiguration.h"
