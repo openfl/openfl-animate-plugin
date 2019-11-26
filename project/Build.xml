@@ -31,7 +31,7 @@
 		
 		<file name="src/DocType.cpp" />
 		<file name="src/Main.cpp" />
-		<file name="src/MyXmlParser.cpp" />
+		<!-- <file name="src/MyXmlParser.cpp" /> -->
 		<file name="src/OutputWriter.cpp" />
 		<!-- <file name="src/ScriptOutputWriter.cpp" /> -->
 		<file name="src/Publisher.cpp" />
@@ -58,7 +58,7 @@
 			
 			<ext value=".fcm" />
 			
-			<lib name="${NATIVE_TOOLKIT_PATH}/xerces-c/Build/Win64/VC10/Release/xerces-c_3.lib" />
+			<!-- <lib name="${NATIVE_TOOLKIT_PATH}/xerces-c/Build/Win64/VC10/Release/xerces-c_3.lib" /> -->
 			<lib name="Shell32.lib" />
 			
 		</section>
